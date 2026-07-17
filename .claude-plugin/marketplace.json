@@ -1,0 +1,13 @@
+{
+  "name": "charge",
+  "owner": {
+    "name": "Yusri"
+  },
+  "plugins": [
+    {
+      "name": "charge",
+      "source": "./",
+      "description": "Take charge: autonomy suite (owner/goal/loop) + discipline skills, guardrails, and one master router"
+    }
+  ]
+}

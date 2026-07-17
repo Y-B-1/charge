@@ -1,0 +1,32 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Read and follow the using-charge skill before responding to anything.",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/skills/guardrails/scripts/guard-bash.sh",
+            "timeout": 20
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/skills/guardrails/scripts/budget-halt.sh",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}

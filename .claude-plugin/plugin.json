@@ -1,0 +1,20 @@
+{
+  "name": "charge",
+  "description": "Take charge: autonomy suite (owner/goal/loop) + discipline skills forked from superpowers, with guardrails, one master router, and honest terminal states",
+  "version": "1.1.0",
+  "author": {
+    "name": "Yusri",
+    "email": "yosri86@gmail.com"
+  },
+  "homepage": "https://github.com/Y-B-1/charge",
+  "repository": "https://github.com/Y-B-1/charge",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "autonomy",
+    "tdd",
+    "debugging",
+    "workflows",
+    "guardrails"
+  ]
+}
