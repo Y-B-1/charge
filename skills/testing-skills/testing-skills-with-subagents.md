@@ -10,7 +10,7 @@ You run scenarios without the skill (RED - watch agent fail), write skill addres
 
 **Core principle:** If you didn't watch an agent fail without the skill, you don't know if the skill prevents the right failures.
 
-The RED-GREEN-REFACTOR cycle here is self-contained: each scenario runs in a fresh-context subagent, this file supplies the skill-specific test formats (pressure scenarios, rationalization tables).
+The RED-GREEN-REFACTOR cycle here is self-contained: each scenario runs in a fresh-context subagent, this file supplies the skill-specific test formats (pressure scenarios, rationalization tables) (the red-green-refactor cycle is owned by the vendored tdd skill; here it is applied to documentation).
 
 ## When to Use
 

@@ -22,7 +22,7 @@ if [ -f "$CACHE" ]; then
   [ $(( now - mtime )) -lt 60 ] && fresh=1
 fi
 if [ "$fresh" -ne 1 ]; then
-  if ! npx -y "ccusage@${CCUSAGE_PIN}" daily --json > "$CACHE" 2>/dev/null; then
+  if ! npx -y "ccusage@${CCUSAGE_PIN}" daily --json --since "$(date +%Y%m%d)" --until "$(date +%Y%m%d)" > "$CACHE" 2>/dev/null; then
     echo "charge budget-halt: ccusage unavailable — budget check skipped (fail-open)." >&2
     exit 0
   fi

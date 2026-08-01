@@ -3,16 +3,14 @@ name: using-charge
 description: >-
   Use when starting any conversation or coding task in a charge-equipped
   project — the router that maps intent to the right skill before any
-  response, exploration, or clarifying question. Routes: building or changing
-  anything while direction is open (grilling or grill-with-docs to align,
-  then domain-modeling → to-spec → to-tickets → implement with tdd inside →
-  code-review); autonomy ("keep going until done," "run unattended," "own
-  this project") to goal/loop/owner; unattended-run safety, budget caps, and
-  skill vetting to guardrails; skill authoring, pressure-testing, and catalog
-  audits to writing-great-skills/testing-skills/skill-audit; MCP work to
-  mcp-builder; bugs, failing tests, regressions to diagnosing-bugs;
-  architecture-scale refactors to wayfinder/improve-codebase-architecture.
-  If any charge skill could apply, load this first.
+  response, exploration, or clarifying question. Routes: feature work and
+  alignment interviews; specs, tickets, implementation, code review;
+  autonomy runs ("keep going until done," "run unattended," "own this
+  project"); unattended-run safety, budget caps, skill vetting; skill
+  authoring, pressure-testing, catalog audits; MCP servers; bugs, failing
+  tests, regressions; architecture and refactors; domain vocabulary; git
+  safety; pre-commit enforcement. If any charge skill could apply, load
+  this first.
 ---
 
 <SUBAGENT-STOP>
@@ -34,16 +32,21 @@ run, and wait.
 
 | Intent sounds like | Route |
 | --- | --- |
-| "Build X / add a feature / change behavior" — direction still open | **grilling** (align) → **domain-modeling** → **to-spec** → **to-tickets** → **implement** (tdd inside) → **code-review** |
+| "Build X / add a feature / change behavior" — direction still open | **grilling** (align) → **to-spec** → **to-tickets** → **implement** (tdd inside) → **code-review** |
 | Same, but a PRD/docs exist to align against — or docs should fall out of the interview | **grill-with-docs**, then the same chain |
+| Quick alignment grill on one decision, no docs involved | **grill-me** |
+| Vocabulary needs sharpening / name the domain precisely | **domain-modeling** |
 | "Define done / acceptance criteria / ready this for an autonomous run" | **goal** |
 | "Keep going until X / run unattended / don't stop until done" | **loop** (consumes goal's contract) |
 | "Own this project / take charge / improve it for hours" | **owner** (drives goal + loop per item) |
 | Setup, budget caps, hook wiring, pre-unattended checks, "is this skill safe to install" | **guardrails** |
+| Block dangerous git commands deterministically | **git-guardrails-claude-code** |
+| Enforce checks at commit time | **setup-pre-commit** |
 | "Execute this plan" — independent tasks, subagents available | **subagent-driven-development** |
 | Any bug, failing test, regression, or "something's broken/slow" | **diagnosing-bugs** |
 | Work too big for one session / "where do we even start" | **wayfinder** |
 | "Improve the architecture / find deepening opportunities" | **improve-codebase-architecture** |
+| Architecture vocabulary and design principles for a codebase | **codebase-design** |
 | Write or edit a skill | **writing-great-skills** |
 | Pressure-test a skill before shipping | **testing-skills** |
 | Catalog bloat, duplicate skill names, description budget | **skill-audit** |

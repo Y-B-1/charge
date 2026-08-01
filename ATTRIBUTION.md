@@ -5,10 +5,13 @@ subagent-driven-development, dispatching-parallel-agents, systematic-debugging,
 test-driven-development, requesting-code-review, receiving-code-review,
 verification-before-completion, using-git-worktrees,
 finishing-a-development-branch, writing-skills, and the using-charge master
-pattern) are a personalized fork of **Superpowers** by Jesse Vincent (obra) —
-https://github.com/obra/superpowers — MIT License, Copyright (c) 2025 Jesse
-Vincent. Supporting prompt/reference files are carried from that repository
-with light adaptation. The autonomy suite (owner, goal, loop) is original to
+pattern) were, through v1.x, a personalized fork of **Superpowers** by Jesse
+Vincent (obra) — https://github.com/obra/superpowers — MIT License, Copyright
+(c) 2025 Jesse Vincent. Eleven of the forked skills were removed in v2.0.0
+(superseded by the vendored Matt Pocock skills below); the surviving fork,
+writing-skills, was renamed testing-skills. Supporting prompt/reference files
+were carried from that repository with light adaptation. The autonomy suite
+(owner, goal, loop) is original to
 this repository, informed by Anthropic's loops guidance, the Forward Future
 Loop Library, Geoffrey Huntley's Ralph technique, and the June–July 2026 loop
 engineering literature.
@@ -20,7 +23,7 @@ MIT License applies to this repository; see LICENSE.
 - **anthropics/skills** (Apache-2.0): mcp-builder skill carried verbatim
   (skills/mcp-builder, LICENSE.txt retained); skill-creator validation
   scripts (quick_validate, package_skill, improve_description, utils) carried
-  into writing-skills/scripts with LICENSE-anthropic.txt.
+  into testing-skills/scripts with LICENSE-anthropic.txt.
 - **github/spec-kit** (MIT): constitution/spec/plan/tasks/checklist templates
   carried into goal/assets/speckit with source headers.
 - **steipete/agent-scripts** (MIT): skill-audit's workflow adapted from
@@ -33,7 +36,7 @@ MIT License applies to this repository; see LICENSE.
 
 ## v2.0 vendoring — Matt Pocock skills
 
-**mattpocock/skills** (MIT, Copyright (c) Matt Pocock) —
+**mattpocock/skills** (MIT, Copyright (c) 2026 Matt Pocock) —
 https://github.com/mattpocock/skills — vendored **verbatim** (content and
 frontmatter untouched) from plugin version **1.2.0**, on **2026-08-01**.
 Each skill's entire directory is carried into `skills/<name>/`. See SYNC.md
@@ -55,4 +58,5 @@ finishing-a-development-branch, requesting-code-review,
 receiving-code-review, verification-before-completion,
 systematic-debugging, test-driven-development), which are removed. The
 superpowers attribution above is retained for the remaining forked
-material (writing-skills and the using-charge router pattern).
+material (testing-skills — formerly writing-skills — and the using-charge
+router pattern).

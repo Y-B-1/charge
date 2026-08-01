@@ -15,19 +15,44 @@ and flags reflect mid-2026 Claude Code — verify against the live docs
 ## Wiring A — the fresh-context harness (default)
 
 Feed [../assets/OWNER-PROMPT.template.md](../assets/OWNER-PROMPT.template.md)
-to the loop skill's harness (`scripts/ralph-loop.sh`), with a verifier that
-gates the completion promise on the JSON backlog:
+to the loop skill's harness (`scripts/ralph-loop.sh`). The harness requires a
+`-f` JSON state file (schema: the loop skill's
+`assets/loop-state.template.json`); for an owner run, give it a **single
+feature standing for the whole backlog** — the real per-item state stays in
+BACKLOG.json, which the `-v` verifier gates on. Copy the template and collapse
+`features[]` to one entry (the template's `contract` and `harness` blocks
+carry over unchanged):
+
+```json
+{
+  "goal": "SPEC.md — owner backlog complete",
+  "features": [
+    {
+      "id": "backlog-complete",
+      "description": "BACKLOG.json holds zero items with \"passes\": false and run.acceptance passes",
+      "verify": "jq -e '[.items[] | select(.passes == false)] | length == 0' BACKLOG.json",
+      "passes": false,
+      "evidence": null,
+      "attempts": 0,
+      "blocked": false,
+      "blocked_reason": null
+    }
+  ]
+}
+```
 
 ```
-./ralph-loop.sh -p OWNER-PROMPT.md -n 40 -c OWNER-DONE \
+./ralph-loop.sh -p OWNER-PROMPT.md -f loop-state.json -n 40 \
   -v "jq -e '[.items[] | select(.passes == false)] | length == 0' BACKLOG.json && npm test"
 ```
 
 Each pass is a **fresh context window**; all continuity lives in
 SPEC/RESEARCH/BACKLOG.json/LOOP-STATE and git — which is why every pass starts
 by re-reading them. The harness re-prompts mechanically: same prompt, new pass,
-until the completion sigil appears **and** the verify gate passes (the promise
-alone is never trusted). This is the default because in-session looping
+until the pass ends with `SIGIL: DONE` **and** the verify gate passes (the
+sigil is a claim, never a verdict — a premature DONE just keeps looping; the
+same goes for `SIGIL: BLOCKED` / `SIGIL: NEEDS-APPROVAL` / `SIGIL: STALLED`,
+the only other lines the harness parses). This is the default because in-session looping
 accumulates context — the process restart is the load-bearing detail that
 keeps every pass sharp, and the harness (not the agent) detects EXHAUSTED
 (iteration cap) and STALLED (empty diffs / identical failure signatures /
@@ -152,7 +177,8 @@ Re-reading SPEC.md at the top of every pass is the standing session ritual: it
 picks the next task. It never audits the *accumulated completed work* against
 intent — that is what drifts. So, on a **pass-count cadence**: every N
 completed implementation passes (N from BACKLOG.json's run config, default 3,
-counted in LOOP-STATE.md), **the next fresh-context iteration runs as a
+counted in BACKLOG.json's `run.passes_since_audit`), **the next
+fresh-context iteration runs as a
 dedicated audit pass instead of an implementation pass.** No wall-clock
 trigger — clocks have no meaning across process restarts.
 
@@ -168,7 +194,8 @@ The audit pass, in order, all findings in writing:
    whose `review_after` condition has passed — re-arm them with a fresh reason
    or move them to `needs_human` (a stale rejection is context poisoning).
 4. Record: findings and any drift verdict in `LOOP-STATE.md`; score/order and
-   bucket changes in `BACKLOG.json`; reset the audit counter. If drift was
+   bucket changes in `BACKLOG.json`; reset `run.passes_since_audit` to 0. If
+   drift was
    found, fix the backlog *before* any further execution.
 
 **Escalation is the harness's existing breaker, not a new one:** the audit

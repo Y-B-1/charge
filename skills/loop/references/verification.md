@@ -69,8 +69,9 @@ Match the checker to the stakes. From cheapest to strongest:
    outer script — never model-judged, immune to a confident summary, and the
    same gate that feeds failure-signature stall detection.
 3. **TDD red→green (high reliability, code).** Write the failing test first;
-   implement until green, then keep the full suite green. Tests pass or they
-   don't — the best default for "implement feature X."
+   implement until green, then keep the full suite green (process owned by
+   the vendored tdd skill). Tests pass or they don't — the best default for
+   "implement feature X."
 4. **Separate sub-agent verifier (high stakes / long runs).** A *different*
    agent in its own context reviews the changed files, runs the full suite, and
    reports. The writer and the grader are different agents.
@@ -113,7 +114,7 @@ STALLED, EXHAUSTED, or BLOCKED. Name it honestly (SKILL.md, terminal states).
 
 ## 7. The Gate, and 2026 stop-hook notes
 
-The Iron Law (from Superpowers' verification-before-completion): **no
+The Iron Law (from the Superpowers project): **no
 completion claims without fresh verification evidence.** Before any claim of
 done/fixed/passing: **identify** the command that proves it → **run** it fresh
 and in full → **read** the output and exit code → **verify** it confirms the

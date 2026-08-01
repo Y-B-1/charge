@@ -4,9 +4,9 @@
       {
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Read and follow the using-charge skill before responding to anything.",
-            "timeout": 30
+            "type": "command",
+            "command": "echo 'The using-charge router skill applies to this session; consult it before responding.'",
+            "timeout": 5
           }
         ]
       }

@@ -77,9 +77,9 @@ kickoff; never run ownerless prose and hope it keeps going.
    and git history. Form a hypothesis: what is this, who is it for, why does it
    exist, what state is it in. Look up every *fact* the environment can answer;
    spend the user's time only on *decisions*.
-2. **Grill, then spec.** Run the `grilling` skill against your hypothesis —
-   one question at a time, your recommended answer attached — until intent,
-   non-goals, and what success looks like are shared understanding. Then run
+2. **Grill, then spec.** Run the `grilling` skill against your hypothesis
+   until intent, non-goals, and what success looks like are shared
+   understanding. Then run
    `to-spec` to synthesize the PRD and save it as `SPEC.md` at the repo root
    (the run's on-disk end-state artifact, whatever else to-spec publishes).
 3. **Co-author the acceptance criteria.** With the user, define what a

@@ -53,7 +53,7 @@ the harness never duplicates what the practice layer already does better.
 | loop | Fresh-context bash loop to a verified finish; sigil vocabulary, stall detection, JSON state |
 | guardrails | Deterministic enforcement: PreToolUse denies, budget halt, hook timeouts, skill vetting |
 | subagent-driven-development | Parallel dispatch with per-task reviewer gates and post-integration conflict checks |
-| writing-skills | Adversarial skill pressure-testing (authoring defers to writing-great-skills) |
+| testing-skills | Adversarial skill pressure-testing (authoring defers to writing-great-skills) |
 | skill-audit | Catalog footprint audit and pruning |
 | mcp-builder | MCP server construction (Anthropic, Apache-2.0) |
 

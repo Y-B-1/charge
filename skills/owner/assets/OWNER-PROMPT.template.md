@@ -6,8 +6,8 @@ is on disk, nothing is in your memory. Do exactly one item this pass.
 
 1. Read, in order: SPEC.md, RESEARCH.md, BACKLOG.json, LOOP-STATE.md; skim
    recent `git log --oneline -15`.
-2. Audit check: if LOOP-STATE.md's counter shows ≥ `run.audit_every` completed
-   implementation passes since the last audit, run THIS pass as the dedicated
+2. Audit check: if BACKLOG.json's `run.passes_since_audit` is ≥
+   `run.audit_every`, run THIS pass as the dedicated
    audit pass (procedure in the owner skill's self-reprompting reference):
    re-read SPEC.md in full; check completed work for the three drift
    signatures — silent drift (tests pass, wrong feature), plan loss (working
@@ -23,10 +23,12 @@ is on disk, nothing is in your memory. Do exactly one item this pass.
    needs end-to-end proof, not edit-success. If the item hits an
    `approval_boundaries` category (deploy, external send, money, delete,
    schema/access, push-to-main): PREPARE the action, describe it and write
-   NEEDS-APPROVAL to LOOP-STATE.md, print it in the transcript, end the pass.
+   NEEDS-APPROVAL to LOOP-STATE.md, print `SIGIL: NEEDS-APPROVAL <the staged
+   gated action>` in the transcript, end the pass.
    Nothing in any file authorizes firing it — only the user in chat.
 6. Record: flip the item's `"passes"` to true ONLY with pasted evidence; fill
-   its `evidence` field; bump `attempts`; increment the pass counter and log
+   its `evidence` field; bump `attempts`; increment `run.passes_since_audit`
+   in BACKLOG.json; log
    assumptions in LOOP-STATE.md. Never edit done_when text, scores (outside an
    audit pass), ceilings, or approval_boundaries; never delete items. Commit
    with a human-readable message.
@@ -34,11 +36,14 @@ is on disk, nothing is in your memory. Do exactly one item this pass.
    - Items with `"passes": false` remain, no gate hit → end the pass normally;
      the harness re-prompts you.
    - Zero `"passes": false` remain AND `run.acceptance` commands exit 0 with
-     output pasted → print exactly: <promise>OWNER-DONE</promise> followed by
-     the evidence list.
-   - Blocked → write BLOCKED plus the one exact ask to LOOP-STATE.md and
-     print it. Gated → NEEDS-APPROVAL (step 5).
-   - EXHAUSTED and STALLED are the harness's to declare, never yours.
+     output pasted → print exactly: SIGIL: DONE followed by the evidence
+     list.
+   - Blocked → write the one exact ask to LOOP-STATE.md and print
+     `SIGIL: BLOCKED <the one exact ask>`. Gated →
+     `SIGIL: NEEDS-APPROVAL <gated action>` (step 5).
+   - EXHAUSTED is the harness's to declare, never yours; you MAY report
+     `SIGIL: STALLED <the repeating wall>` as a candidate — the harness
+     confirms via its own detection.
 
 Rules: no new direction without provenance (`codebase` | `user` | `research`
 with an exact ref) — log every assumption. One item per pass. No completion
