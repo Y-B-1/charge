@@ -62,6 +62,6 @@ run, and wait.
 1. **Process before implementation** — when several apply, the earlier-chain
    skill wins and calls the rest.
 2. **Attended vs unattended** — a human answering questions takes Matt's
-   chain; "while I'm away" takes goal/loop/owner, with guardrails first.
+   chain; "while I'm away" takes goal/ralph-loop/owner, with guardrails first.
 3. **Precedence** — the user's direct instructions and project files
    (CLAUDE.md, AGENTS.md) override skills; skills override default behavior.
