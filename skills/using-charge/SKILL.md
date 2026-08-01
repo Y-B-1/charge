@@ -21,7 +21,7 @@ this router and execute your brief.
 # Using charge
 
 charge is three layers sharing one spine: Matt Pocock's practice chain
-(vendored, MIT) for attended work, an autonomy suite (goal → loop, owner)
+(vendored, MIT) for attended work, an autonomy suite (goal → ralph-loop, owner)
 for unattended work, and guardrails underneath both. Route the intent below
 BEFORE any response or action — including clarifying questions and codebase
 exploration. Announce "Using <skill>", then follow it exactly. A routed skill

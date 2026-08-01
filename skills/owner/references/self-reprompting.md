@@ -15,7 +15,7 @@ and flags reflect mid-2026 Claude Code — verify against the live docs
 ## Wiring A — the fresh-context harness (default)
 
 Feed [../assets/OWNER-PROMPT.template.md](../assets/OWNER-PROMPT.template.md)
-to the loop skill's harness (`scripts/ralph-loop.sh`). The harness requires a
+to the ralph-loop skill's harness (`scripts/ralph-loop.sh`). The harness requires a
 `-f` JSON state file (schema: the loop skill's
 `assets/loop-state.template.json`); for an owner run, give it a **single
 feature standing for the whole backlog** — the real per-item state stays in

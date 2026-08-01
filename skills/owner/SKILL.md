@@ -21,7 +21,7 @@ disable-model-invocation: true
 
 This is the **founder brain** on top of the pair you already have: `owner`
 decides *which target comes next*, `goal` turns each target into a checkable
-contract, `loop` makes each contract true. Where `loop` drives one decided task
+contract, `ralph-loop` makes each contract true. Where `ralph-loop` drives one decided task
 to done, `owner` behaves the way a human builder does — understands *why* the
 thing exists, researches what the best solutions in the market do, picks the
 highest-leverage work, executes it, verifies it, and moves to the next — for
@@ -53,7 +53,7 @@ while BACKLOG.json has an item with "passes": false
     read SPEC.md + RESEARCH.md + BACKLOG.json + LOOP-STATE.md   (observe, fresh)
     if the audit cadence is due → run this pass as the audit    (Phase 5)
     else take the single top passes:false item                  (choose)
-    contract it (goal) → execute it (loop discipline)           (act)
+    contract it (goal) → execute it (ralph-loop discipline)           (act)
     run its stated check; paste the real output                 (verify)
     flip passes with evidence; count the pass; commit           (record)
     # finishing an item is NOT a stop — it is the prompt for the next item
@@ -126,7 +126,7 @@ it or bucket it. Schema, editing rules, and the red-team script:
 
 ## Phase 3 — Execute, item after item
 
-Take the top `passes:false` item; run `goal` (contract) → `loop` (bounded
+Take the top `passes:false` item; run `goal` (contract) → `ralph-loop` (bounded
 execution: smallest credible change, worktree/`claude/` branch, checkpoint
 before consequential edits, fresh context per pass so nothing rots). Tier the
 intelligence: a cheap executor does the mechanical work; escalate to an
@@ -195,7 +195,7 @@ spend/passes used, and the single recommended next action.
 
 ---
 
-## Guardrails (delta on top of loop's — all of loop's still apply)
+## Guardrails (delta on top of ralph-loop's — all of ralph-loop's still apply)
 
 - **Scope creep ceiling.** No expanding the in-scope list mid-run beyond the
   Phase 0 ceiling; new ideas go to the buckets for the next run.
@@ -250,7 +250,7 @@ spend/passes used, and the single recommended next action.
   [assets/RESEARCH.template.md](assets/RESEARCH.template.md).
 
 Companions: **grilling** + **to-spec** (Phase 0 artifacts), the **goal** skill
-(contracts), and the **loop** skill (execution, including its fresh-context
+(contracts), and the **ralph-loop** skill (execution, including its fresh-context
 harness scripts, which owner's wiring reuses). If goal/loop are missing, fall
 back to loop's inline goal step and its bare cycle — but the suite is designed
 to run together.

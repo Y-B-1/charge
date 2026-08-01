@@ -8,11 +8,11 @@ One plugin, 30 skills, three layers, one router. v2.0.
 |---|---|---|
 | **Knowledge** | Orchestra vault (separate repo) | The brain: doctrine, concepts, verified mechanisms. Charge's revamped skills are re-anchored to it; it is not shipped here. |
 | **Practice** | Matt Pocock's engineering chain, vendored **verbatim** | How attended work runs: grilling → to-spec → to-tickets → implement/tdd → code-review. Content and frontmatter untouched — see SYNC.md. |
-| **Harness** | Autonomy suite (charge-origin) | What runs unattended: owner decides WHAT, goal contracts done_when, loop drives fresh-context iterations to an honest terminal state (DONE / BLOCKED / NEEDS-APPROVAL / EXHAUSTED / STALLED) — guarded by guardrails' deterministic hooks. |
+| **Harness** | Autonomy suite (charge-origin) | What runs unattended: owner decides WHAT, goal contracts done_when, ralph-loop drives fresh-context iterations to an honest terminal state (DONE / BLOCKED / NEEDS-APPROVAL / EXHAUSTED / STALLED) — guarded by guardrails' deterministic hooks. |
 
 The router (`using-charge`) binds the layers: every intent routes either
 into Matt's chain (human in the loop) or into the autonomy suite
-(goal → loop, or owner for self-directed runs). Rubrics defer upward —
+(goal → ralph-loop, or owner for self-directed runs). Rubrics defer upward —
 the harness never duplicates what the practice layer already does better.
 
 ## Skill inventory
@@ -51,7 +51,7 @@ the harness never duplicates what the practice layer already does better.
 | using-charge | THE router — the only model-invoked charge skill |
 | owner | Self-directed project ownership: kickoff, research, JSON backlog, drift audits |
 | goal | done_when contracts: mechanical checks, guard pairing, approval boundaries, NOT-READY |
-| loop | Fresh-context bash loop to a verified finish; sigil vocabulary, stall detection, JSON state |
+| ralph-loop | Fresh-context bash loop to a verified finish; sigil vocabulary, stall detection, JSON state |
 | guardrails | Deterministic enforcement: PreToolUse denies, budget halt, hook timeouts, skill vetting |
 | subagent-driven-development | Parallel dispatch with per-task reviewer gates and post-integration conflict checks |
 | testing-skills | Adversarial skill pressure-testing (authoring defers to writing-great-skills) |
