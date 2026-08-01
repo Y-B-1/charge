@@ -35,6 +35,7 @@ the harness never duplicates what the practice layer already does better.
 | to-spec | Conversation → spec |
 | to-tickets | Spec → sliced tickets with blocking edges |
 | triage | Issue lifecycle states pre-execution |
+| setup-matt-pocock-skills | Once-per-repo initializer: issue tracker, triage labels, domain-doc layout (vendored) |
 | wayfinder | Codebase orientation |
 | grill-me | Get grilled on your own idea |
 | grilling | One-question-at-a-time alignment interview |

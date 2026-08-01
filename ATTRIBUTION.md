@@ -47,7 +47,7 @@ Vendored skills:
 - engineering: code-review, codebase-design, diagnosing-bugs,
   domain-modeling, grill-with-docs, implement,
   improve-codebase-architecture, prototype, research,
-  resolving-merge-conflicts, tdd, to-spec, to-tickets, triage, wayfinder
+  resolving-merge-conflicts, tdd, to-spec, to-tickets, triage, wayfinder, setup-matt-pocock-skills
 - productivity: grill-me, grilling, handoff, writing-great-skills
 - misc: git-guardrails-claude-code, setup-pre-commit
 

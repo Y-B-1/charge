@@ -23,7 +23,7 @@ cd "$(git rev-parse --show-toplevel)"
 for s in code-review codebase-design diagnosing-bugs domain-modeling \
          grill-with-docs implement improve-codebase-architecture prototype \
          research resolving-merge-conflicts tdd to-spec to-tickets triage \
-         wayfinder; do diff -ru "$UP/engineering/$s" "skills/$s"; done
+         wayfinder setup-matt-pocock-skills; do diff -ru "$UP/engineering/$s" "skills/$s"; done
 for s in grill-me grilling handoff writing-great-skills; do
   diff -ru "$UP/productivity/$s" "skills/$s"; done
 for s in git-guardrails-claude-code setup-pre-commit; do
@@ -43,7 +43,7 @@ for pair in engineering:code-review engineering:codebase-design \
   engineering:improve-codebase-architecture engineering:prototype \
   engineering:research engineering:resolving-merge-conflicts \
   engineering:tdd engineering:to-spec engineering:to-tickets \
-  engineering:triage engineering:wayfinder productivity:grill-me \
+  engineering:triage engineering:wayfinder engineering:setup-matt-pocock-skills productivity:grill-me \
   productivity:grilling productivity:handoff \
   productivity:writing-great-skills misc:git-guardrails-claude-code \
   misc:setup-pre-commit; do
