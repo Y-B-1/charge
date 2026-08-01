@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# charge project-audit: the mechanical half of the agent-infrastructure audit.
+# charge agent-config-audit: the mechanical half of the agent-infrastructure audit.
 # Read-only. Non-interactive. Never edits the audited repo.
 #
 # Usage: audit.sh [repo-dir] [--global /path/to/global/CLAUDE.md] [--no-fire]
@@ -38,7 +38,7 @@ HAVE_PY=0; command -v python3 >/dev/null 2>&1 && HAVE_PY=1
 
 rel() { printf '%s' "${1#$REPO/}"; }
 
-echo "charge project-audit — $REPO"
+echo "charge agent-config-audit — $REPO"
 [ -n "$GLOBAL" ] && echo "global brief: $GLOBAL"
 
 # ---------------------------------------------------------------- 1. BUDGET

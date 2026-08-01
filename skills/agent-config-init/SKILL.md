@@ -1,5 +1,5 @@
 ---
-name: project-init
+name: agent-config-init
 description: >-
   Install the agent infrastructure for a repo, once. Use on "set this project up
   for Claude/agents," "init the repo," "write a CLAUDE.md / AGENTS.md," "add
@@ -82,7 +82,7 @@ Before you write a single config file:
    summarising, no merging.
 2. Add your interpretation only under a separate `## Interpretation` heading,
    clearly subordinate.
-3. Commit it alone: `docs: record project-init rulings <date>`.
+3. Commit it alone: `docs: record agent-config-init rulings <date>`.
 
 State this in the file: **this file outranks every later interpretation,
 including this skill's output.** If a generated file ever contradicts it, the
@@ -135,6 +135,14 @@ project file **only** when no global file exists, or when the project needs a
 Apply the **no-op test** to every surviving sentence: if deleting it would not
 change agent behavior, delete it.
 
+**Keep the `## How this file changes` section — it is not optional.** Every
+other section describes the project; that one governs how the file itself
+grows, and it is the only defence against the failure this skill exists to
+prevent: nobody writes a 500-line instruction file on purpose, it accretes one
+reasonable-looking line at a time. The discipline must live *in* the file it
+governs, because that is the file loaded when an agent is tempted to append to
+it. Pair it with the budget guard in T2 for the deterministic half.
+
 ### T1 — `.claude/settings.json` (always)
 
 Permissions built from the commands you actually observed in step 1 — not a
@@ -177,6 +185,15 @@ Prose cannot enforce; a hook can.
   use a `Read` deny rule in T1 instead.
 - If the hazard is git-specific and generic, route to the
   **git-guardrails-claude-code** skill instead of writing your own.
+
+**Recommended in every repo that has a `CLAUDE.md`:** install
+[assets/hooks/guard-instruction-budget.sh](assets/hooks/guard-instruction-budget.sh)
+as a `PostToolUse` hook on `Write|Edit`. It counts the non-comment lines of
+`CLAUDE.md`, `AGENTS.md`, `.claude/rules/*.md` and `AGENT-MEMORY.md` after any
+write and exits 2 past the cap, so the agent trims in the same turn instead of
+leaving the bloat for a later audit to find. Caps are overridable by
+environment variable; the prose rule in T0 and this hook are the same rule at
+two enforcement levels.
 
 ### T3 — `.claude/rules/*.md` (when subsystems have distinct rules)
 

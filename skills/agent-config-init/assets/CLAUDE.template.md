@@ -68,6 +68,21 @@ or `touch .claude/.bypass-guards`. <!-- delete this line if no T2 hooks -->
 User's verbatim words → `docs/agents/rulings-*.md` → `CONSTITUTION.md` → this
 file → the current plan → `AGENT-MEMORY.md` (advisory) → skill defaults.
 
+## How this file changes
+
+<!-- KEEP THIS SECTION. It is what stops this file growing into noise.
+     It governs the file it sits in, so it must live here, not in a skill. -->
+
+- A rule is added only after an agent got it wrong — cite the date and what
+  broke. No speculative rules.
+- Before adding, try three cheaper homes first: a **hook** if it must always
+  hold, a **path-scoped rule** in `.claude/rules/` if it only applies to some
+  files, or a **pointer** if the answer is already in the repo.
+- Adding a line means budgeting for it: if the file is at its cap, something
+  else is deleted in the same edit.
+- A rule that has not fired in a sprint is deleted. Silence is the signal.
+- Facts about the codebase never live here — they rot. Point at the file.
+
 ---
 
 <!-- DEDUP CHECKLIST - run before saving, delete nothing but lines:

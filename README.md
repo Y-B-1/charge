@@ -10,9 +10,9 @@ One plugin, 33 skills, three layers, one router. v2.0.
 | **Practice** | Matt Pocock's engineering chain, vendored **verbatim** | How attended work runs: grilling → to-spec → to-tickets → implement/tdd → code-review. Content and frontmatter untouched — see SYNC.md. |
 | **Harness** | Autonomy suite (charge-origin) | What runs unattended: owner decides WHAT, goal contracts done_when, ralph-loop drives fresh-context iterations to an honest terminal state (DONE / BLOCKED / NEEDS-APPROVAL / EXHAUSTED / STALLED) — guarded by guardrails' deterministic hooks. |
 
-`project-init` is how the knowledge layer's payload reaches a new repo: it
+`agent-config-init` is how the knowledge layer's payload reaches a new repo: it
 lands the doctrine as a repo's own CLAUDE.md, settings, hooks and rules —
-self-contained, no link back to the brain — and `project-audit` checks that
+self-contained, no link back to the brain — and `agent-config-audit` checks that
 payload for drift afterwards.
 
 The router (`using-charge`) binds the layers: every intent routes either
@@ -54,8 +54,8 @@ the harness never duplicates what the practice layer already does better.
 | Skill | Purpose |
 |---|---|
 | using-charge | THE router — the only model-invoked charge skill |
-| project-init | Once-per-repo agent infrastructure install: explore → grill → record verbatim rulings → write only the earned tiers (CLAUDE.md, settings, hooks, rules, memory, constitution, loop wiring) |
-| project-audit | Read-only drift audit of an existing repo's agent config across nine checks (budget, global duplication, prose-that-should-be-hooks, hook fire tests, false enforcement claims, memory, precedence, skill economics, stale pointers) |
+| agent-config-init | Once-per-repo agent infrastructure install: explore → grill → record verbatim rulings → write only the earned tiers (CLAUDE.md, settings, hooks, rules, memory, constitution, loop wiring) |
+| agent-config-audit | Read-only drift audit of an existing repo's agent config across nine checks (budget, global duplication, prose-that-should-be-hooks, hook fire tests, false enforcement claims, memory, precedence, skill economics, stale pointers) |
 | owner | Self-directed project ownership: kickoff, research, JSON backlog, drift audits |
 | goal | done_when contracts: mechanical checks, guard pairing, approval boundaries, NOT-READY |
 | ralph-loop | Fresh-context bash loop to a verified finish; sigil vocabulary, stall detection, JSON state |

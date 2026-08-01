@@ -1,5 +1,5 @@
 ---
-name: project-audit
+name: agent-config-audit
 description: >-
   Audit an existing repo's agent infrastructure — CLAUDE.md, hooks,
   settings.json, memory files, project-local skills — against
@@ -8,7 +8,7 @@ description: >-
   .claude/settings.json, a hook script, or a memory file. Triggers: "audit
   this repo's setup," "is our CLAUDE.md too long," "check our hooks actually
   fire," "why does the agent ignore our rules," "review our agent config,"
-  "we just rewrote CLAUDE.md." Nine checks: instruction budget and the no-op
+  "we just rewrote CLAUDE.md." Ten checks: instruction budget and the no-op
   test, duplication against the user's global CLAUDE.md, prose rules that
   should be hooks, hook validity plus live fire tests, false enforcement
   claims, memory shape and staleness, precedence coherence, project skill
@@ -78,7 +78,7 @@ or spot a contradiction between two files — checks 1, 2, 3, 5, 6, 7 need you.
 
 ---
 
-## Step 2 — The nine checks
+## Step 2 — The ten checks
 
 ### 1. BUDGET — is the brief still affordable
 
@@ -260,6 +260,22 @@ pointer is MINOR alone, **MAJOR inside a mandated explore-step**, since the
 agent follows it before doing anything else.
 
 ---
+
+### 10. GROWTH DISCIPLINE — is there a defence against accretion
+
+Nobody writes a 500-line brief on purpose; it accretes one reasonable-looking
+line at a time. A repo with no amendment rule will be back over budget by the
+next audit, so check that the discipline exists:
+
+- Does `CLAUDE.md` carry a `## How this file changes` section (or equivalent
+  amendment rules: add only after an observed failure, try hook/rules/pointer
+  first, budget for every addition, delete rules that stop firing)?
+- Is a budget guard wired on `Write|Edit` (a `PostToolUse` hook that counts the
+  brief after a write and pushes back past the cap)?
+
+Missing section → **MAJOR**. Missing section *and* already over cap → **CRITICAL**:
+the file is growing with nothing to stop it. Fix: install the section from
+`agent-config-init`'s template and wire its budget guard.
 
 ## Step 3 — Severity
 

@@ -33,8 +33,8 @@ run, and wait.
 
 | Intent sounds like | Route |
 | --- | --- |
-| New repo / "set this project up for agents" / no `CLAUDE.md` or `.claude/` yet | **project-init** (runs setup-matt-pocock-skills inside) |
-| "Audit my setup / is our CLAUDE.md right / do our hooks fire" · periodic drift check · after a big infra or config change | **project-audit** (read-only; findings → to-tickets) |
+| New repo / "set this project up for agents" / no `CLAUDE.md` or `.claude/` yet | **agent-config-init** (runs setup-matt-pocock-skills inside) |
+| "Audit my setup / is our CLAUDE.md right / do our hooks fire" · periodic drift check · after a big infra or config change | **agent-config-audit** (read-only; findings → to-tickets) |
 | "Build X / add a feature / change behavior" — direction still open | **grilling** (align) → **to-spec** → **to-tickets** → **implement** (tdd inside) → **code-review** |
 | Same, but a PRD/docs exist to align against — or docs should fall out of the interview | **grill-with-docs**, then the same chain |
 | Quick alignment grill on one decision, no docs involved | **grill-me** |
