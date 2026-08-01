@@ -3,7 +3,8 @@ name: using-charge
 description: >-
   Use when starting any conversation or coding task in a charge-equipped
   project — the router that maps intent to the right skill before any
-  response, exploration, or clarifying question. Routes: feature work and
+  response, exploration, or clarifying question. Routes: repo setup for agents
+  (no CLAUDE.md yet) and audits of an existing agent config; feature work and
   alignment interviews; specs, tickets, implementation, code review;
   autonomy runs ("keep going until done," "run unattended," "own this
   project"); unattended-run safety, budget caps, skill vetting; skill
@@ -32,6 +33,8 @@ run, and wait.
 
 | Intent sounds like | Route |
 | --- | --- |
+| New repo / "set this project up for agents" / no `CLAUDE.md` or `.claude/` yet | **project-init** (runs setup-matt-pocock-skills inside) |
+| "Audit my setup / is our CLAUDE.md right / do our hooks fire" · periodic drift check · after a big infra or config change | **project-audit** (read-only; findings → to-tickets) |
 | "Build X / add a feature / change behavior" — direction still open | **grilling** (align) → **to-spec** → **to-tickets** → **implement** (tdd inside) → **code-review** |
 | Same, but a PRD/docs exist to align against — or docs should fall out of the interview | **grill-with-docs**, then the same chain |
 | Quick alignment grill on one decision, no docs involved | **grill-me** |
