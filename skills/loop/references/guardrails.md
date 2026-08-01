@@ -9,9 +9,11 @@ ungated loop reliably turns into either a surprise bill or a destructive mistake
 
 Set at least one, ideally both:
 
-- **Iteration / turn cap** — "stop after N turns." `/goal` tracks turns natively;
-  a bare `while` loop has no ceiling unless you add `--max-iterations`. Start
-  small (10–20 for most jobs) and raise it once you trust the loop.
+- **Iteration / turn cap** — the harness's `-n` flag; "stop after N turns" on
+  `/goal`. A bare `while` loop has no ceiling unless you add one. Start small
+  (10–20 for most jobs) and raise it once you trust the loop. The cap is
+  **harness-enforced** — the agent cannot observe its own cap, so hitting it is
+  the harness's EXHAUSTED exit, never the agent's to declare or dress up.
 - **Budget cap** — a dollar or token ceiling. When automated credit runs out,
   automated requests stop, so a forgotten loop fails closed rather than billing
   on.
@@ -25,35 +27,44 @@ tokens**; on a frontier model that's roughly $0.25 *per late step*, and a
 around **$10/hour** on a mid-tier model. The constraint isn't usually cost — it's
 how much reliable, *checkable* work you can define. Implications:
 
-- Prefer a **tight `done_when`** and a **fresh-context loop** (re-read state each
-  pass) over one ever-growing session — it's cheaper and sharper.
+- Prefer a **tight `done_when`** and the **fresh-context harness** (a new
+  process each pass, state re-read from disk) over one ever-growing session —
+  it's cheaper and sharper. This is why the harness is the default.
 - **Skills compound, prompts burn.** A loop that calls sharp named skills gets
   cheaper over time; a loop that re-derives everything each pass does not.
 - On a Pro plan, heavy automation hits rate limits fast; production loops want a
   higher tier. Automated workloads (Agent SDK, `claude -p`, CI) bill against a
   separate credit pool from interactive use.
 
-## 2. No-progress and oscillation detection
+## 2. No-progress and oscillation detection (harness-side, deterministic)
 
 A loop that retries the same action after the same error isn't iterating — it's
-spinning, and spinning burns the budget for nothing. Stop when:
+spinning, and spinning burns every remaining capped iteration re-hitting the
+same wall. Detection lives in the **outer harness, not the agent's memory** —
+fresh-context passes start empty, so the streaks persist in the state file and
+the comparison is a hash in the script, never a model judgement. Stop when:
 
-- the **same error message** appears N times in a row,
-- the diff is **empty** for N passes (nothing actually changed),
-- the **same test keeps failing** the same way, or
+- the **verify-failure signature** (a hash of the failing check's output) is
+  identical N passes in a row,
+- the **diff is empty** for N passes (change signature unchanged — nothing
+  actually changed),
+- a **feature hits its attempt cap** with no diff (it gets `blocked:true` and
+  is skipped rather than re-picked; all features blocked → BLOCKED), or
 - two reviewers **oscillate** (A approves, B rejects, A approves…) for N rounds
   without new evidence.
 
-When no-progress fires, enter **STALLED** and report the repeating obstacle —
-don't keep paying to re-hit the same wall. If a recorded lesson would help next
-time, write it to the spine / `CLAUDE.md` before stopping.
+When detection fires, the harness writes **STALLED** into the state JSON —
+script-written, so the terminal state is as tamper-resistant as the `passes`
+gating — and reports the repeating obstacle. If a recorded lesson would help
+next time, write it to `loop-log.md` / `CLAUDE.md` before stopping.
 
 ## 3. Circuit-breaker on consecutive failures
 
 After N **failed** attempts in a row (build errors, failing verification),
 **roll back to the last good checkpoint, stop, and alert** — don't keep digging a
 hole. This is distinct from no-progress: no-progress is "nothing's changing,"
-the breaker is "things are actively breaking."
+the breaker is "things are actively breaking." The rollback runs inside the
+same whole-process isolation as the loop itself — never as a reach outside it.
 
 ## 4. Git checkpoints — make every pass reversible
 
@@ -68,8 +79,8 @@ paths, breaking changes to shared modules, and regressions in unrelated areas.
 
 These actions require explicit human approval **even in the middle of a loop**.
 The loop may *prepare* them (stage the commit, draft the message, write the
-migration) and then **pause in NEEDS-APPROVAL**, but must not execute them on its
-own:
+migration) and then **pause — emit `SIGIL: NEEDS-APPROVAL` with the staged
+action described**, but must not execute them on its own:
 
 - destructive or irreversible changes (hard deletes, history rewrites, dropping
   data),
@@ -93,21 +104,28 @@ per-action and doesn't generalize to later actions.
 - **Don't disable the `claude/` prefix** (it's the guard that stops a stray
   automated push from landing on `main`) until your downstream review is genuinely
   robust.
-- **Don't bypass permissions** (`--dangerously-skip-permissions`) on anything
-  with a blast radius. Bulk-approving permissions can let a single bad prompt run
-  `git push --force origin main`. If you need unattended approval, prefer auto
-  mode or an allowlist of safe commands, and run inside a sandbox.
-- **Sandbox consequential autonomy:** a container (or restricted environment)
-  with only the directories the loop needs mounted, limiting the blast radius.
-  The default "Trusted" Routine environment allows package registries but not
-  arbitrary external communication — keep it that way unless you have a reason.
+- **Skip-permissions belongs inside isolation, and only there.**
+  `--dangerously-skip-permissions` is the standard posture for an unattended
+  loop **when the whole process runs inside a container/VM/sandbox runtime** —
+  isolation is what makes full-speed autonomy survivable, with the blast radius
+  capped by the boundary, deterministic PreToolUse hooks for the gated
+  categories, and a budget halt. On the bare host it is never acceptable: a
+  single bad prompt can run `git push --force origin main`. Outside isolation,
+  use auto mode or an allowlist of safe commands.
+- **Isolation is spatial, not behavioral:** the sandbox controls *where*
+  commands run, not *what* runs — deploys, sends, and money escape any spatial
+  boundary via mounted credentials. That's why the §5 approval gates and their
+  hook enforcement still apply inside the sandbox. The default "Trusted"
+  Routine environment allows package registries but not arbitrary external
+  communication — keep it that way unless you have a reason.
 - **`.claudeignore`** to keep secrets and irrelevant paths out of context.
 
 ## 7. An audit trail
 
-Every autonomous decision must be reviewable after the fact. Pipe output to a log
-(`claude ... 2>&1 | tee run.log`), keep `LOOP-STATE.md` current, and for Routines
-read the transcript at `claude.ai/code/routines`. "Trusting automation" without
+Every autonomous decision must be reviewable after the fact. The harness tees
+everything to `ralph-run.log` and persists status in the state JSON; the agent
+appends narrative to `loop-log.md`; for Routines read the transcript at
+`claude.ai/code/routines`. "Trusting automation" without
 ever watching it run is how a small, hard-to-notice failure becomes a big one.
 Watch the **first few passes** of any new loop before walking away.
 
@@ -136,18 +154,22 @@ from becoming fast nonsense — not maximal autonomy.
 - **Programmatic runs bill separately:** since June 15, 2026, Agent SDK /
   `claude -p` / CI usage draws from a separate credit pool at full API rates —
   cost a long run before starting it.
-- **Hooks need timeouts:** a hook chain that recursed without depth/time
-  limits has produced a multi-thousand-dollar overnight bill; set `timeout` on
-  every hook, and know the Stop-hook block cap (default ~8 consecutive blocks,
-  `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP`) is the built-in no-progress breaker —
-  treat an override as STALLED, never as done.
+- **Hooks need explicit timeouts:** set `timeout` on every hook entry rather
+  than relying on defaults — prompt/agent hooks are LLM calls billed per fire.
+  Two different bounds, both needed: the Stop-hook block cap (default ~8
+  consecutive blocks, `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP`) caps recursion depth,
+  the timeout caps per-invocation duration/cost. Treat a block-cap override as
+  STALLED, never as done. (One reported charge-side incident of an unbounded
+  hook chain producing a four-figure overnight bill — single-author anecdote,
+  but the hygiene stands on its own.)
 - **Subagent depth is capped at 5 levels**; design fan-outs wide, not deep, and
   cap parallelism explicitly.
 - **Auto mode now hard-blocks** destructive git it wasn't asked for
   (`reset --hard`, `checkout -- .`, `clean -fd`, `stash drop`), amending
   commits it didn't author, and `terraform/pulumi/cdk destroy` outside the
-  requested stack — keep it (never `--dangerously-skip-permissions`) as the
-  unattended default.
+  requested stack — the unattended default on the bare host.
+  `--dangerously-skip-permissions` remains the posture inside whole-process
+  isolation (§6), paired with guard hooks and a budget halt.
 - **Supply chain:** pin and audit any third-party skill before an unattended
   run — a 2025–26 wave of typosquatted skills and an npm worm harvested tokens
   and keys; treat a skill manifest that makes network calls as suspect until

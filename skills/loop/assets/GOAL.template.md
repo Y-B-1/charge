@@ -33,4 +33,6 @@
 ## context the loop needs
 - repo / paths in scope: <...>
 - how to run things: <build/test/lint commands, env setup>
-- memory spine: LOOP-STATE.md
+- state: loop-state.json (the authority — each done_when above becomes a
+  features[] entry; agents flip only passes, with evidence)
+- narrative: loop-log.md (context for the next pass, never authority)

@@ -1,223 +1,238 @@
 # Loop mechanisms
 
-How to actually run the loop. Default **native-first, portable fallback**: reach
-for the built-in commands for the common cases, drop to the portable filesystem
-loop when a long/large/version-uncertain run or a tool-using checker needs it.
-Loop features move fast — confirm exact flags in the official docs
+The default is **the fresh-context harness** (`scripts/ralph-loop.sh`). The
+native commands cover two specific shapes — a short attended push (`/goal`) and
+a watch (`/loop`) — plus fan-out (`/batch`) and scheduling (`/schedule`). Loop
+features move fast — confirm exact flags in the official docs
 (`code.claude.com/docs`) before leaving anything running unattended.
 
-## The mechanism decision, in one question
+## The selection rule, in one question
 
 **Are you pushing work to a finish line, or watching for something to change?**
-Pushing → `/goal` (or `/batch`, or the portable loop). Watching → `/loop`.
-Pointing one at the other's job is the most common and most expensive mistake.
+Pushing → the harness (default), or `/goal` for a short attended run. Watching
+→ `/loop`. Pointing one at the other's job is the most common and most
+expensive mistake: `/goal` on an external wait spins (the thing isn't Claude's
+to move); `/loop` on a finish-line job re-runs blindly after done.
 
 ---
 
-## `/goal` — run until a condition is true (the primary drive-to-done path)
+## 1. The fresh-context harness (the default)
 
-What it is: you write a completion condition; after **every turn** a separate,
-faster evaluator model (defaults to Haiku) reads the condition plus the
-conversation so far and returns yes/no with a short reason. "No" → Claude keeps
-working, with the reason as guidance for the next turn. "Yes" → the goal clears
-and an achieved entry is recorded. The model doing the work is **not** the model
-deciding it's done — that split is the point.
+Feed the agent the same prompt repeatedly, **each pass a fresh process** — a
+new context window — with the filesystem + git as memory. Process restart is
+the load-bearing detail: in-session looping accumulates context and degrades;
+a fresh pass re-reads the state file, the log, and the repo, and stays sharp.
+The intelligence is in the files the previous pass left behind.
+
+The harness's per-pass sequence (all deterministic, all script-side):
+
+1. **Pre-pass done check** — zero `passes:false` in the state JSON + verify
+   command exits 0 → DONE without paying for another pass.
+2. **Feature pick accounting** — the first `passes:false`, non-`blocked`
+   feature (the same rule the prompt gives the agent) gets its `attempts`
+   counter incremented.
+3. **Agent pass** — the prompt piped into a brand-new agent process; output
+   captured and tee'd to the log.
+4. **Empty-diff detection** — a change signature (HEAD + status + diff,
+   excluding the state/log files, plus the features' `passes` values) compared
+   against the last pass. Identical = an empty pass.
+5. **Attempt-cap blocking** — a feature at `-A` attempts, still failing, with
+   an empty diff → `blocked:true` with a reason; it is skipped, not re-picked,
+   so one stuck feature can't eat the whole cap. All remaining features
+   blocked → BLOCKED.
+6. **Sigil parse** — the result stream (stream-json extracted via
+   `jq 'select(.type=="result")'`, plain output as-is) is grepped for the
+   agent's sigil; see the taxonomy below.
+7. **Verify + failure signatures** — the `-v` command runs; on failure its
+   output is hashed, and the agent's result text is hashed too (an agent
+   emitting the identical result every pass — same error, same refusal — is
+   spinning even if git churns). `-N` identical hashes in a row on either
+   signal → STALLED.
+8. **Persist** — streaks, signatures, and iteration are written into
+   `harness.*` in the state file, so a restarted harness resumes rather than
+   restarts.
+
+State contract: **agents flip `features[].passes` (with `evidence`) and
+nothing else.** `attempts`, `blocked`, and `harness.*` are script-written;
+`loop-log.md` is narrative, never authority. Invocation and flags are in the
+script header; the prompt skeleton is in `../assets/RECIPES.md`.
+
+Reach for the harness whenever the run is long, unattended, context-heavy,
+version-uncertain, or the check needs to run tools. It is fully portable: pass
+any agent CLI after `--` (e.g. `-- codex exec`).
+
+---
+
+## 2. The circuit breakers + terminal-state taxonomy
+
+Every loop exit — harness, `/goal`, Stop hook — lands on exactly one of five
+states, and **never dresses one as another**:
+
+| State | Exit | Detected by | Meaning |
+| --- | --- | --- | --- |
+| DONE | 0 | harness confirms the agent's claim | zero `passes:false` (checked via jq) AND verify exits 0, output surfaced |
+| STALLED | 3 | harness streaks, or agent report | no measurable progress — the repeating obstacle named |
+| EXHAUSTED | 4 | harness only | the iteration cap hit before done — the agent cannot observe its own cap |
+| BLOCKED | 5 | agent sigil, or every feature attempt-capped | a decision, access, or tool is missing — named precisely |
+| NEEDS-APPROVAL | 6 | agent sigil | a gated action staged and described, never executed — the human fires it |
+
+Detection responsibility is split on purpose: **DONE, BLOCKED, NEEDS-APPROVAL,
+and the STALLED candidate are agent-emitted sigils; EXHAUSTED and confirmed
+STALLED are harness-detected.** A sigil is a claim; the harness's jq + verify
+check is the verdict.
+
+Three distinct breakers, three different problems:
+
+- **The stall breaker (nothing is changing).** `-N` consecutive empty-diff
+  passes, identical verify-failure signatures, or identical agent result
+  outputs → STALLED. This is the cheap
+  third exit between "sigil" and "cap": without it a spinning loop burns every
+  remaining capped iteration re-hitting the same wall. Detection is a hash
+  comparison in the script — never a model judgement.
+- **The attempt-cap breaker (one feature is stuck).** A feature attempted `-A`
+  passes with `passes` still false and no diff is marked `blocked` and
+  skipped — preventing the same-first-step-forever failure without killing the
+  whole run.
+- **The consecutive-failure breaker (things are actively breaking).** Each fix
+  adding a new regression is not a stall — it's a hole being dug. Roll back to
+  the last good git checkpoint, stop, report. The rollback runs inside the
+  same isolation as the loop.
+
+Related facts: a Stop-hook override after ~8 consecutive blocks
+(`CLAUDE_CODE_STOP_HOOK_BLOCK_CAP`) is STALLED, never done. An EXHAUSTED or
+STALLED run reported as DONE is the premature-completion failure this
+vocabulary exists to prevent — the two are indistinguishable without it.
+
+---
+
+## 3. `/goal` — native push (short, attended runs)
+
+You write a completion condition; after **every turn** a separate, faster
+evaluator model (defaults to Haiku) reads the condition plus the conversation
+and returns yes/no with a reason. "No" → Claude keeps working with the reason
+as guidance; "Yes" → the goal clears. The doer is not the judge — that split is
+the point.
 
 - Set: `/goal <condition>`. Check: `/goal`. Stop early: `/goal clear`.
-- Non-interactive (runs the whole loop in one invocation):
-  `claude -p "/goal CHANGELOG.md has an entry for every PR merged this week"`.
-  `Ctrl+C` interrupts a non-interactive goal.
-- It's a wrapper around a session-scoped, prompt-based **Stop hook**. Available
-  in recent Claude Code (the `/goal` form landed in v2.1.139). Works in the
-  desktop app and via Remote Control.
-- **Pair with auto mode** so each turn runs unattended (auto mode approves tool
-  calls *within* a turn; `/goal` starts the *next* turn — they're complementary).
+- Non-interactive: `claude -p "/goal <condition>"`; `Ctrl+C` interrupts.
+- It's a wrapper around a session-scoped, prompt-based Stop hook (the `/goal`
+  form landed in v2.1.139). Pair with auto mode so turns run unattended.
 
-**The constraint that breaks most `/goal` loops:** the evaluator **cannot call
-tools.** It only judges what Claude has already surfaced in the transcript. So:
+**The constraint that breaks most `/goal` loops: the evaluator cannot call
+tools.** It judges only what's already surfaced in the transcript. So: run the
+check each turn and show its real output; always add `— stop after N turns`;
+and when the proof needs a tool run, use a Stop hook or sub-agent verifier —
+or the harness, whose checker is a real command. Prefer the harness over
+`/goal` for anything long, unattended, or context-heavy: `/goal` turns share
+one growing session.
 
-- Write the finish line as something Claude's own output can prove ("`npm test`
-  exits 0," "every row prints a verified email"), and actually run that check
-  and show its output each turn.
-- Always add a ceiling clause — `— stop after N turns` — so a condition that
-  can't be met doesn't run forever.
-- If "done" truly requires running a command the evaluator can't see, use a
-  **custom Stop hook** or a **sub-agent verifier** (which *can* run tools)
-  instead of bare `/goal`. See `verification.md`.
-
-Good `/goal` examples (note: a clear end state, a runnable check, a guard, a cap):
+Good conditions (clear end state, runnable check, guard, cap):
 
 ```
 /goal all tests pass and lint is clean — stop after 10 turns
 /goal every file importing from ./legacy-api now imports from ./v2-api,
   all tests pass, and `npm run typecheck` is clean — stop after 30 turns
-/goal `npm run build` exits 0 — run the build, fix the first error,
-  repeat until it succeeds; stop after 10 turns
-/goal test coverage is ≥ 80% with all tests passing — add focused tests for
-  the least-covered files, re-run coverage each turn; stop at the threshold
-  or after 12 turns
-/goal sort every file in Downloads into subfolders by type, keep going until
-  none are left, do not delete anything, and stop after 30 turns
+/goal test coverage ≥ 80% with all tests passing and no test deleted or
+  skipped — stop at the threshold or after 12 turns
 ```
 
 ---
 
-## `/batch` — split one big change across parallel agents
+## 4. `/loop` — native watch (polling, not driving)
 
-For a large change that decomposes cleanly (a codemod across many files, lint-
-rule rollout, a wide migration): `/batch` fans the work across ~5–30 parallel
-**worktree** agents so they don't trip over each other. Combine with a `/goal`
-per slice so each agent drives its piece to a verified finish, then integrate.
-Use it when the work is wide and independent; use a single `/goal` when it's
-deep and sequential.
+`/loop <interval> <prompt>` re-runs a prompt (or slash command) on a time
+interval, sleeping between runs; `Esc` to stop.
 
----
-
-## `/loop` — re-run on an interval (watching, not driving)
-
-`/loop` re-runs a prompt (or another slash command) on a time interval and
-sleeps between runs; `Esc` to stop. Shape: `/loop <interval> <prompt>`.
-
-- **Session-scoped:** it dies when you close the session, only fires when the
-  session is idle, and a forgotten loop auto-expires (≈7 days). For runs that
-  must survive the laptop closing, use `/schedule`.
-- **Drop the interval and it becomes self-paced:** Claude works, checks its own
-  stop condition inline, and goes again or stops — useful when you want
-  iteration-until-done but the check lives in the prompt itself rather than in a
-  separate evaluator. (A self-paced `/loop` can match `/goal`'s independence by
-  spinning up a **sub-agent verifier**, which, unlike the `/goal` evaluator, can
-  run tools.)
-- Use it to **watch**: poll CI, wait for a deploy to go green, re-run a flaky
-  suite, babysit a PR. Don't use it to drive a finish-line job — it will re-run
-  blindly on the clock long after the job is done.
+- **Session-scoped:** dies with the session, fires only when idle, auto-expires
+  (≈7 days). Runs that must survive the laptop closing → `/schedule`.
+- **Drop the interval and it self-paces:** the check lives in the prompt
+  itself. A self-paced `/loop` can match `/goal`'s independence by spinning up
+  a sub-agent verifier (which, unlike the `/goal` evaluator, can run tools).
+- Use it to **watch**: poll CI, wait for a deploy, re-run a flaky suite,
+  babysit a PR.
 
 ```
 /loop 15m run the test suite; if anything fails, show the failing tests and errors
 /loop 10m run `gh pr checks 1234`; if all pass, say it's ready; else summarize why
-/loop 20m /review-pr 1234
 ```
 
 ---
 
-## `/schedule` — durable cloud Routines
+## 5. `/batch` — split one big change across parallel agents
 
-`/schedule` saves a Routine — a prompt + repo + connectors — that runs on
-Anthropic's cloud, so it keeps running with your computer off. It clones a fresh
-copy of the repo each run and works on `claude/`-prefixed branches.
-
-- **Triggers:** cron (minimum 1-hour interval), a GitHub webhook (PR opened,
-  labeled, released…), or a dedicated API endpoint.
-- Manage with `/schedule list`, `/schedule update`, `/schedule run`; transcripts
-  land at `claude.ai/code/routines`. (There is **no** `/routine` command — the
-  scheduler is `/schedule`.)
-- **Routines run unattended with no follow-up questions**, so the prompt must be
-  fully self-contained: state what to do, what success looks like, and where to
-  send results. Ambiguity produces hit-or-miss behavior every run.
-
-```
-/schedule every weekday at 9am, label new issues from the last 24h by area and
-  priority, and post a one-line summary on each
-/schedule on every push to main, check whether changed code drifted from the
-  docs in /docs, and open a PR fixing anything out of date
-```
+For a large change that decomposes cleanly (codemod, lint rollout, wide
+migration): `/batch` fans the work across ~5–30 parallel worktree agents.
+Combine with a `/goal` per slice, or run the harness per slice; integrate
+after. Wide and independent → `/batch`; deep and sequential → one loop. When
+the orchestration itself is the heavy part (fan-out, judging, merging), a
+dynamic workflow runs the fleet from code — see §9.
 
 ---
 
-## The portable filesystem loop (the fallback that always works)
+## 6. `/schedule` — durable cloud Routines
 
-When `/goal`'s no-tools evaluator is a problem, when context growth would break a
-long run, when the version is uncertain, or when you want a checker that runs
-real commands — drop to a **fresh-context loop with the filesystem + git as
-memory.** This is the Ralph technique: feed the agent the same prompt until a
-completion promise appears, each iteration in a *fresh* context window so it
-doesn't bloat, with progress carried in files and git history.
+`/schedule` saves a Routine — prompt + repo + connectors — that runs on
+Anthropic's cloud with your computer off, cloning fresh and working on
+`claude/`-prefixed branches.
 
-Why fresh context per pass matters: a single ever-growing context both costs more
-and degrades; starting each pass clean and re-reading `LOOP-STATE.md` + the repo
-keeps every pass sharp. The intelligence isn't in the loop — it's that each pass
-sees the files and git history the previous one left behind.
-
-Use [scripts/ralph-loop.sh](../scripts/ralph-loop.sh) (a capped `while` loop over
-`claude -p`, fresh session each pass, completion-promise + max-iterations exit)
-and [scripts/stop-check.sh](../scripts/stop-check.sh) (a deterministic
-verification gate the loop must pass before it's allowed to finish). Always set
-`--max-iterations`; start small (10–20) and watch the first few passes.
-
-A solid portable inner prompt looks like:
-
-```
-Read LOOP-STATE.md and the repo. Do the single most important unfinished thing
-toward the goal in GOAL.md. Make one bounded change, then run <verify command>.
-Append what you changed, the command output, and what's left to LOOP-STATE.md.
-If <done_when> is verified by the command output, print exactly: <promise>DONE</promise>.
-Otherwise stop and the loop will run you again.
-```
+- **Triggers:** cron (min 1-hour interval), a GitHub webhook, or an API
+  endpoint. Manage with `/schedule list|update|run`; transcripts at
+  `claude.ai/code/routines`. (There is no `/routine` command.)
+- **Routines run with no follow-up questions** — the prompt must be fully
+  self-contained: what to do, what success looks like, where results go.
 
 ---
 
-## The nested loop (timer outside, condition inside, skill innermost)
+## 7. The nested shape
 
-To get "a loop that keeps looping until the goal is reached" — and can't quit
-early *or* stop at good-enough — compose the layers:
-
-- **`/loop` (or a Routine / `ralph-loop.sh`)** is the **timer/persistence**: it
-  re-arms the work so a single stuck turn can't end it.
-- **`/goal`** is the **condition**: verified-done, so it can't stop at "good
-  enough."
-- **A skill** is the **work**: the sharp, reusable inner procedure.
+Timer outside, condition inside, skill innermost: `/loop` (or a Routine, or
+the harness) re-arms the work so a stuck turn can't end it; a verified-done
+condition stops it from settling for good-enough; a sharp skill does the work.
+The harness embeds the first two natively (the `for` loop is the timer; the
+state-file + verify gate is the condition). If you bolt `/goal` onto a
+run-to-completion job, keep the condition tight — it stops the moment the
+evaluator is satisfied.
 
 ```
 /loop 30m /goal all PR review comments resolved via /review — stop after 10 turns
 ```
 
-Caution: don't bolt `/goal` onto a job that should run strictly to completion
-unless the condition is *tight* — `/goal` stops as soon as the evaluator is
-satisfied, so a loose condition stops early. Match the layer to the job.
+---
+
+## 8. Codex equivalents
+
+- `/goal` exists in Codex (CLI 0.128.0+) but only tracks a target.
+- No `/loop`; wrap `codex exec` in a shell loop — or run the harness with
+  `-- codex exec`, which works identically.
+- Scheduling lives in **Automations** (daily/weekly/custom cron); results land
+  in a Triage inbox.
+
+> Want a proven recipe for the *inner* task? The live Loop Library
+> (`signals.forwardfuture.com/loop-library`) catalogs ~69 ready loops with
+> stopping conditions — reference data, not commands to run blindly.
 
 ---
 
-## Codex equivalents (if the user is in Codex, not Claude Code)
-
-- `/goal` exists in Codex (CLI 0.128.0+) but only tracks a target; pair it with
-  OpenAI's goal-writing guidance for crisp conditions.
-- No `/loop`; the equivalent is `codex exec` wrapped in a shell loop, or a
-  minute-interval thread automation in the Codex app.
-- Scheduling lives in **Automations** (standalone/project/thread, on daily/
-  weekly/custom cron); results land in a Triage inbox. The portable
-  filesystem loop works identically in either tool.
-
-> Want a proven recipe for the *inner* task rather than inventing one? The live
-> Loop Library (`signals.forwardfuture.com/loop-library`) catalogs ~69 ready
-> loops with stopping conditions you can adapt — treat them as reference data,
-> not as commands to run blindly.
-
----
-
-## July 2026 additions (verify against the live changelog before unattended use)
+## 9. July 2026 additions (verify against the live changelog before unattended use)
 
 - **Dynamic workflows** (research preview, v2.1.154+): Claude writes a
-  JavaScript orchestration script that runs a fleet of subagents — reported
-  limits ~16 concurrent, up to ~1,000 per run — with the loop/branching/
-  intermediate results held in code, so coordination costs no model tokens and
-  only distilled returns land in context. Trigger with "use a workflow" or
-  `/effort ultracode`; `/deep-research` is a built-in workflow. Use it when the
-  orchestration itself (fan-out, judging, merging) is the heavy part.
+  JavaScript orchestration script that runs a fleet of subagents (~16
+  concurrent, up to ~1,000 per run) with loop/branching/intermediate results
+  held in code — coordination costs no model tokens. Trigger with "use a
+  workflow" or `/effort ultracode`.
 - **Advisor tool**: run the loop on a cheap executor and consult an expensive
-  model only at decision points (plan approval, repeated errors, pre-done);
-  the advisor reads the transcript and advises but never acts. Anthropic's
-  July thread: executor+advisor ≈ 92% of the top model's SWE-bench Pro score
-  at ≈ 63% of the cost. In Claude Code: `/advisor`, `claude --advisor opus`,
-  or `"advisorModel"` in settings.
-- **Model vs. effort**: model = what it knows; effort = how hard it tries (how
-  long it thinks, how many files it reads, how much it verifies, how far it
-  pushes before checking in). Debug order: fix context first; then "didn't try
-  hard enough" → raise effort, "didn't know enough" → raise model.
-- **Agent teams** (experimental, env-flag gated): 2–16 peer sessions with a
-  shared task list; ~7× the tokens of one session — reach for it only when
-  true peer collaboration beats a fan-out.
-- **/goal fine print**: the condition caps at 4,000 characters, and `/goal`
-  rides the hooks system (needs the trust dialog; unavailable when hooks are
+  model only at decision points (plan approval, repeated errors, pre-done).
+  Anthropic's July thread: executor+advisor ≈ 92% of the top model's SWE-bench
+  Pro score at ≈ 63% of the cost. `/advisor`, `claude --advisor opus`, or
+  `"advisorModel"` in settings.
+- **Model vs. effort**: model = what it knows; effort = how hard it tries.
+  Debug order: fix context first; "didn't try hard enough" → raise effort,
+  "didn't know enough" → raise model.
+- **Agent teams** (experimental, env-flag gated): 2–16 peer sessions, ~7× the
+  tokens of one session — only when true peer collaboration beats a fan-out.
+- **/goal fine print**: the condition caps at 4,000 characters; `/goal` rides
+  the hooks system (needs the trust dialog; unavailable when hooks are
   disabled).
-- **Background agents** now run by default, and ones launched in worktrees
-  commit, push, and open a draft PR when they finish instead of stopping to
-  ask — factor that into approval boundaries.
+- **Background agents** run by default, and ones launched in worktrees commit,
+  push, and open a draft PR when they finish instead of stopping to ask —
+  factor that into approval boundaries.

@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# Deterministic gate on a task reviewer's verdict file. The controller runs
+# this — never parses prose — to decide whether a task passes its review
+# gate.
+#
+# Contract (written by the reviewer per task-reviewer-prompt.md):
+#   { "passes": bool,
+#     "findings": [ { "file": str, "line": num,
+#                     "severity": "critical"|"important"|"minor",
+#                     "axis": "spec"|"standards", "summary": str } ],
+#     "cannot_verify": [ str ], "report": str }
+#
+# Exit 0: passes (zero critical/important findings).
+# Exit 1: fails — blocking findings printed one per line.
+# Exit 2: malformed (missing file, invalid JSON, wrong shape, or passes:true
+#         alongside blocking findings). A malformed verdict is a reviewer
+#         failure: re-dispatch the reviewer; never treat it as a pass.
+#
+# Usage: verdict-check VERDICT_FILE
+set -euo pipefail
+
+if [ $# -ne 1 ]; then
+  echo "usage: verdict-check VERDICT_FILE" >&2
+  exit 2
+fi
+
+f=$1
+[ -f "$f" ] || { echo "no such verdict file: $f" >&2; exit 2; }
+command -v jq >/dev/null 2>&1 || { echo "jq is required" >&2; exit 2; }
+
+if ! jq -e '
+  type == "object"
+  and (.passes | type == "boolean")
+  and (.findings | type == "array")
+  and ([.findings[]
+        | select((.file | type == "string")
+                 and (.line | type == "number")
+                 and (.severity == "critical" or .severity == "important"
+                      or .severity == "minor")
+                 and (.summary | type == "string"))]
+       | length) == (.findings | length)
+' "$f" >/dev/null 2>&1; then
+  echo "malformed verdict: $f" >&2
+  exit 2
+fi
+
+blocking=$(jq '[.findings[] | select(.severity == "critical"
+                                     or .severity == "important")] | length' "$f")
+passes=$(jq -r '.passes' "$f")
+total=$(jq '.findings | length' "$f")
+
+if [ "$passes" = "true" ] && [ "$blocking" -gt 0 ]; then
+  echo "malformed verdict: passes:true with ${blocking} blocking finding(s)" >&2
+  exit 2
+fi
+
+if [ "$passes" = "true" ]; then
+  echo "PASS: 0 blocking finding(s), ${total} total"
+  jq -r '(.cannot_verify // [])[] | "cannot_verify: \(.)"' "$f"
+  exit 0
+fi
+
+echo "FAIL: ${blocking} blocking finding(s), ${total} total"
+jq -r '.findings[]
+       | select(.severity == "critical" or .severity == "important")
+       | "\(.severity): \(.file):\(.line) — \(.summary)"' "$f"
+jq -r '(.cannot_verify // [])[] | "cannot_verify: \(.)"' "$f"
+jq -r '.report // empty | "report: \(.)"' "$f"
+exit 1

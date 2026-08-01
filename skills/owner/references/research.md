@@ -4,8 +4,9 @@ Why this phase exists: the difference between an agent that "improves a
 project" well and one that hallucinates direction is **grounding**. A human
 builder doesn't decide from memory — they search, study the market, learn what
 the best solutions do, and only then choose. This phase makes that mandatory:
-after it, every direction decision must trace to `RESEARCH.md`, `SPEC.md`, or a
-user answer. No source → needs-human bucket, not the backlog.
+after it, every direction decision must carry provenance — `codebase` (the
+repo/SPEC.md itself), `user` (an answer), or `research` (a cited `RESEARCH.md`
+line). No source → the `needs_human` bucket, not the backlog.
 
 ## The four lanes (bound each; don't boil the ocean)
 
@@ -52,6 +53,6 @@ user answer. No source → needs-human bucket, not the backlog.
 - **Learn patterns, don't clone products.** The output of a competitor scan is
   "they solved onboarding with X pattern — worth adapting because Y," not a
   feature-for-feature copy list.
-- **Cite forward.** Every backlog item born from research names its
-  `RESEARCH.md` line, so the red-team reviewer and the human can audit why any
-  piece of work exists.
+- **Cite forward.** Every backlog item born from research sets
+  `provenance: {"origin": "research", "ref": "RESEARCH.md L<n>"}`, so the
+  red-team reviewer and the human can audit why any piece of work exists.

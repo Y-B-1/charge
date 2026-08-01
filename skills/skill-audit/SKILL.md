@@ -1,45 +1,78 @@
 ---
 name: skill-audit
 description: >-
-  Use when the skill catalog feels bloated, routing misfires, session context
-  seems heavy, or after adding several skills — audits every installed skill's
-  always-loaded footprint (name + description budget), flags overlong or
-  duplicate descriptions and name collisions, estimates total token cost, and
-  guides compaction and pruning. Triggers: "audit my skills," "skill budget,"
-  "too many skills," "clean up the catalog," "why is my context so heavy."
+  Audit the installed skill catalog's always-loaded footprint. Run when the
+  catalog feels bloated, routing misfires, sessions start heavy, or after
+  adding 3-5 skills — measures per-skill description cost, flags overlong or
+  near-duplicate descriptions and name collisions, then applies the prune and
+  duplicate-resolution rubrics below.
+disable-model-invocation: true
 ---
 
 # Skill Audit
 
 Every installed skill's **name + description loads into every session** — the
-body loads only on invocation. So the catalog's always-on cost is the sum of
-its descriptions, and it grows silently with every skill added. This skill
-measures it, finds the offenders, and guides the trim. (Workflow adapted from
-steipete's skill-cleaner, MIT; reimplemented portably for Claude Code.)
+body loads only on invocation. The catalog's always-on cost is the sum of its
+descriptions, and it grows silently with every skill added. This skill
+measures it, then applies two rubrics: duplicate-name resolution and catalog
+prune. (Workflow adapted from steipete's skill-cleaner, MIT; reimplemented
+portably for Claude Code.)
 
 ## Process
 
 1. **Measure:** run [scripts/audit.sh](scripts/audit.sh) against each skill
-   root in use (`~/.claude/skills`, the project's `.claude/skills`). It
-   reports per-skill description chars, the catalog total, an approximate
-   always-loaded token estimate, and flags:
+   root in use (`~/.claude/skills`, the project's `.claude/skills`, plugin
+   skill dirs). It reports per-skill description chars, the catalog total, an
+   approximate always-loaded token estimate, and flags:
    FAIL >1024 chars (over the spec cap) · WARN >800 (compaction candidate) ·
-   duplicate names across roots · near-duplicate descriptions.
-2. **Compact the WARN/FAIL descriptions** — keep the trigger nouns (product,
-   tool, action, object — they're what routing matches on); cut narrative,
-   qualifiers, and repeated phrasing. Relaxed grammar is fine; missing
-   triggers are not. Re-run the audit to confirm the saving.
-3. **Resolve duplicates:** keep exactly one copy per skill name; prefer the
-   project-local copy when it encodes project policy, the user-level copy
-   otherwise. Verify the kept copy loads before deleting the other.
-4. **Prune candidates:** a skill unused for months, fully covered by another,
-   or one-off by nature (belongs in CLAUDE.md or a script instead) — propose
-   removal to the human with the reason; never silently delete.
-5. **Update the router:** any rename/removal must be reflected in
-   using-charge's routing table, or routing silently breaks.
+   duplicate names across roots.
+2. **Compact WARN/FAIL descriptions** — keep the trigger nouns (product,
+   tool, action, object — they are what routing matches on); cut narrative,
+   qualifiers, repeated phrasing, and synonyms that rename one branch.
+   Relaxed grammar is fine; missing triggers are not. Re-run to confirm the
+   saving.
+3. **Resolve duplicate names** with the rubric below.
+4. **Prune** with the criteria below.
+5. **Update the router:** any rename or removal must be reflected in
+   using-charge's routing table in the same commit, or routing silently
+   breaks.
+
+## Duplicate-name resolution rubric
+
+Exactly one copy survives per skill name. Decide by case:
+
+- **Same content, two roots** — keep the project-local copy when it encodes
+  project policy, the user-level copy otherwise. Verify the survivor loads
+  before deleting the loser.
+- **Different content, same name** — two skills wearing one name. Rename the
+  narrower one (a rename means a new leading word AND a routing-table
+  update), or merge them if they are the same job diverged.
+- **Vendored copy vs local fork** — the vendored copy is upstream truth;
+  never edit it in place. Move local edits into a separately named skill or
+  drop them.
+- **Plugin vs plugin** (two plugins shipping the same skill) — disable the
+  redundant plugin locally; carrying both pays double description load and
+  makes routing nondeterministic.
+
+## Catalog-prune criteria
+
+A skill is a prune candidate when ANY of these hold:
+
+- Not invoked in months and its trigger domain has not recurred.
+- Fully covered by another skill — every branch of it routes somewhere
+  better.
+- One-off by nature — belongs in CLAUDE.md, a script, or a hook, not a
+  skill.
+- Restates well-documented standard practice the model already does
+  unprompted — fails the no-op test at catalog scale.
+- Its description cannot be written with a distinct leading word — it will
+  never win routing against its neighbors.
+
+Propose each removal to the human with the criterion it met; never silently
+delete.
 
 ## Cadence
 
-Run after every 3–5 skills added, when charge exceeds ~20 skills, or whenever
-sessions feel slow to start. Record the before/after totals in the commit
-message — the audit should pay for itself in tokens.
+Run after every 3-5 skills added, when the catalog exceeds ~20 skills, or
+whenever sessions feel slow to start. Record before/after totals in the
+commit message — the audit should pay for itself in tokens.

@@ -1,10 +1,31 @@
 ---
 name: mcp-builder
-description: Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools. Use when building MCP servers to integrate external APIs or services, whether in Python (FastMCP) or Node/TypeScript (MCP SDK).
+description: Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools. Use when building MCP servers to integrate external APIs or services, whether in Python (FastMCP) or Node/TypeScript (MCP SDK). Opens with a CLI-first gate — build an MCP server only for what a plain CLI tool can't reach.
 license: Complete terms in LICENSE.txt
+disable-model-invocation: true
 ---
 
 # MCP Server Development Guide
+
+## Phase 0: The CLI-First Gate (answer before anything else)
+
+A plain CLI tool (`gh`, `aws`, `sentry-cli`, or a small script the agent runs
+via Bash) is more context-efficient than an MCP server — it adds zero
+per-tool listing to any session, while every MCP tool costs description load
+and too many visible tools measurably slow the model. So:
+
+1. **Does the service have a usable CLI, or can a thin script wrap its API?**
+   If yes: STOP. Write the CLI wrapper (plus a line in CLAUDE.md on when to
+   use it) instead of an MCP server.
+2. **Build an MCP server only for what a CLI can't reach** — streaming or
+   stateful protocol needs, OAuth the harness must broker and hold, MCP
+   resources/prompts/sampling, or clients that cannot execute shell commands.
+3. **If the gate passes**, scope the damage: register the server per project
+   (not globally), and prefer defining it inline in a subagent's frontmatter
+   so its tool descriptions stay out of the parent conversation.
+
+State the gate decision explicitly — "CLI covers this: stopping" or "CLI
+can't reach X and Y: proceeding" — before starting Phase 1.
 
 ## Overview
 

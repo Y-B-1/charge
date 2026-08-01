@@ -1,7 +1,7 @@
 {
   "name": "charge",
-  "description": "Take charge: autonomy suite (owner/goal/loop) + discipline skills forked from superpowers, with guardrails, one master router, and honest terminal states",
-  "version": "1.1.0",
+  "description": "The executable arm of the Orchestra brain: Matt Pocock's engineering chain (vendored) + a doctrine-aligned autonomy suite (loop/goal/owner) with guardrails, one lean router, honest terminal states",
+  "version": "2.0.0",
   "author": {
     "name": "Yusri",
     "email": "yosri86@gmail.com"

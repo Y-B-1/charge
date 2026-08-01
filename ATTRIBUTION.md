@@ -30,3 +30,29 @@ MIT License applies to this repository; see LICENSE.
   loop/assets/RECIPES.md.
 - **ryoppippi/ccusage** (MIT): used as an external tool by
   guardrails/scripts/budget-halt.sh; no code carried.
+
+## v2.0 vendoring — Matt Pocock skills
+
+**mattpocock/skills** (MIT, Copyright (c) Matt Pocock) —
+https://github.com/mattpocock/skills — vendored **verbatim** (content and
+frontmatter untouched) from plugin version **1.2.0**, on **2026-08-01**.
+Each skill's entire directory is carried into `skills/<name>/`. See SYNC.md
+for the refresh procedure.
+
+Vendored skills:
+
+- engineering: code-review, codebase-design, diagnosing-bugs,
+  domain-modeling, grill-with-docs, implement,
+  improve-codebase-architecture, prototype, research,
+  resolving-merge-conflicts, tdd, to-spec, to-tickets, triage, wayfinder
+- productivity: grill-me, grilling, handoff, writing-great-skills
+- misc: git-guardrails-claude-code, setup-pre-commit
+
+As of v2.0 these supersede and replace the former superpowers-forked
+discipline skills (brainstorming, writing-plans, executing-plans,
+dispatching-parallel-agents, using-git-worktrees,
+finishing-a-development-branch, requesting-code-review,
+receiving-code-review, verification-before-completion,
+systematic-debugging, test-driven-development), which are removed. The
+superpowers attribution above is retained for the remaining forked
+material (writing-skills and the using-charge router pattern).

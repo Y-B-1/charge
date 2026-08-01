@@ -1,22 +1,30 @@
 # Task Reviewer Prompt Template
 
 Use this template when dispatching a task reviewer subagent. The reviewer
-reads the task's diff once and returns two verdicts: spec compliance and
-code quality.
+reads the task's diff once and returns one machine-checkable JSON verdict
+file plus a prose report. The controller gates on
+`scripts/verdict-check VERDICT_FILE` — never on parsed prose.
 
-**Purpose:** Verify one task's implementation matches its requirements (nothing
-more, nothing less) and is well-built (clean, tested, maintainable)
+**Purpose:** Verify one task's implementation matches its requirements
+(nothing more, nothing less) and follows this repo's standards.
+
+The quality rubric is the vendored code-review skill's Standards axis
+(../code-review/SKILL.md, step 3): repo-documented standards plus the smell
+baseline, repo overrides the baseline, every smell a labelled judgement
+call. This template carries placeholders for it; do not substitute a
+different rubric.
 
 ```
 Subagent (general-purpose):
-  description: "Review Task N (spec + quality)"
+  description: "Review Task N (spec + standards)"
   model: [MODEL — REQUIRED: choose per SKILL.md Model Selection; an omitted
          model silently inherits the session's most expensive one]
   prompt: |
-    You are reviewing one task's implementation: first whether it matches its
-    requirements, then whether it is well-built. This is a task-scoped gate,
-    not a merge review — a broad whole-branch review happens separately after
-    all tasks are complete.
+    You are reviewing one task's implementation along two axes: spec
+    compliance (does it match what was requested) and standards (is it
+    well-built by this repo's rules). This is a task-scoped gate, not a
+    merge review — a whole-branch review happens separately after all tasks
+    are complete.
 
     ## What Was Requested
 
@@ -75,7 +83,7 @@ Subagent (general-purpose):
     Warnings or other noise in the implementer's reported test output are
     findings — test output should be pristine.
 
-    ## Part 1: Spec Compliance
+    ## Axis 1: Spec Compliance
 
     Compare the diff against What Was Requested:
 
@@ -87,82 +95,83 @@ Subagent (general-purpose):
       solved
 
     If a requirement cannot be verified from this diff alone (it lives in
-    unchanged code or spans tasks), report it as a ⚠️ item instead of
-    broadening your search.
+    unchanged code or spans tasks), record it in the verdict's
+    `cannot_verify` array instead of broadening your search.
 
-    ## Part 2: Code Quality
+    ## Axis 2: Standards
 
-    **Code quality:**
-    - Clean separation of concerns?
-    - Proper error handling?
-    - DRY without premature abstraction?
-    - Edge cases handled?
+    Judge the diff against this repo's documented standards and the smell
+    baseline below. Three rules bind this axis: a documented repo standard
+    always wins over the baseline; every baseline smell is a labelled
+    judgement call ("possible Feature Envy"), never a hard violation; skip
+    anything tooling already enforces.
 
-    **Tests:**
-    - Do the new and changed tests verify real behavior, not mocks?
-    - Are the task's edge cases covered?
+    Standards sources in this repo: [STANDARDS_SOURCES]
 
-    **Structure:**
-    - Does each file have one clear responsibility with a well-defined interface?
-    - Are units decomposed so they can be understood and tested independently?
-    - Is the implementation following the file structure from the plan?
-    - Did this change create new files that are already large, or
-      significantly grow existing files? (Don't flag pre-existing file
-      sizes — focus on what this change contributed.)
+    Smell baseline (match each against the diff):
+    [SMELL_BASELINE]
 
-    Your report should point at evidence: file:line references for every
-    finding and for any check you would otherwise answer with a bare
-    "yes." A tight report that cites lines gives the controller everything
-    it needs.
+    Tests are standards too: new and changed tests must verify real
+    behavior, not mocks, and cover the task's edge cases.
 
-    Your final message is the report itself: begin directly with the
-    spec-compliance verdict. Every line is a verdict, a finding with
-    file:line, or a check you ran — no preamble, no process narration,
-    no closing summary.
+    ## Severity Calibration
 
-    ## Calibration
-
-    Categorize issues by actual severity. Not everything is Critical.
-    Important means this task cannot be trusted until it is fixed: incorrect
+    Categorize findings by actual severity. Not everything is critical.
+    **critical** — broken or dangerous behavior: this code cannot ship.
+    **important** — this task cannot be trusted until it is fixed: incorrect
     or fragile behavior, a missed requirement, or maintainability damage you
     would block a merge over — verbatim duplication of a logic block,
-    swallowed errors, tests that assert nothing. "Coverage could be broader"
-    and polish suggestions are Minor.
+    swallowed errors, tests that assert nothing. **minor** — "coverage could
+    be broader," polish, judgement-call smells with low blast radius.
     If the plan or brief explicitly mandates something this rubric calls a
     defect (a test that asserts nothing, verbatim duplication of a logic
-    block), that IS a finding — report it as Important, labeled
-    plan-mandated. The plan's authorship does not grade its own work; the
-    human decides.
-    Acknowledge what was done well before listing issues — accurate praise
-    helps the implementer trust the rest of the feedback.
+    block), that IS a finding — report it as important, labeled
+    plan-mandated in its summary. The plan's authorship does not grade its
+    own work; the human decides.
 
-    ## Output Format
+    ## Verdict File — the gate
 
-    ### Spec Compliance
+    Write EXACTLY this JSON shape to [VERDICT_FILE]:
 
-    - ✅ Spec compliant | ❌ Issues found: [what's missing/extra/misunderstood,
-      with file:line references]
-    - ⚠️ Cannot verify from diff: [requirements you could not verify from the
-      diff alone, and what the controller should check — report alongside the
-      ✅/❌ verdict for everything you could verify]
+    {
+      "passes": false,
+      "findings": [
+        {
+          "file": "src/example.ts",
+          "line": 42,
+          "severity": "critical" | "important" | "minor",
+          "axis": "spec" | "standards",
+          "summary": "one-sentence statement of the defect"
+        }
+      ],
+      "cannot_verify": [
+        "requirement you could not verify from the diff alone, and what the
+         controller should check"
+      ],
+      "report": "[REVIEW_REPORT_FILE]"
+    }
 
-    ### Strengths
-    [What's well done? Be specific.]
+    `passes` is true ONLY when there are zero critical and zero important
+    findings — minor findings do not block. A finding without a natural
+    file:line anchor (a missing requirement) uses the most relevant file and
+    line 0. Valid JSON, nothing after the closing brace — a script parses
+    this file, not eyes.
 
-    ### Issues
+    ## Prose Report — the payload
 
-    #### Critical (Must Fix)
-    #### Important (Should Fix)
-    #### Minor (Nice to Have)
+    Write the full report to [REVIEW_REPORT_FILE]:
+    - Strengths: what's well done, specifically — accurate praise helps the
+      implementer trust the rest.
+    - Per finding: file:line, what's wrong, why it matters, how to fix (if
+      not obvious).
+    - Every check you ran outside the diff: the named risk and what you
+      checked.
+    - Every claim cites a line; a check you would otherwise answer with a
+      bare "yes" cites its evidence too.
 
-    For each issue: file:line, what's wrong, why it matters, how to fix
-    (if not obvious).
-
-    ### Assessment
-
-    **Task quality:** [Approved | Needs fixes]
-
-    **Reasoning:** [1-2 sentence technical assessment]
+    Your final message is three lines: the verdict file path, the report
+    file path, and the count (e.g. "passes:false — 1 critical, 2 important,
+    3 minor"). No preamble, no process narration.
 ```
 
 **Placeholders:**
@@ -180,9 +189,20 @@ Subagent (general-purpose):
 - `[DIFF_FILE]` — REQUIRED: the path the controller wrote the review
   package to (`scripts/review-package BASE HEAD` prints the unique path it
   wrote; the package never enters the controller's context)
+- `[STANDARDS_SOURCES]` — files in this repo documenting how code should be
+  written (`CODING_STANDARDS.md`, `CONTRIBUTING.md`, …), or "none found"
+- `[SMELL_BASELINE]` — the smell baseline pasted in full from the vendored
+  code-review skill (../code-review/SKILL.md, step 3) — the reviewer has no
+  other access to it; paste, never paraphrase
+- `[VERDICT_FILE]` — REQUIRED: workspace path
+  `verdict-<base7>..<head7>.json` (per range, so a re-review after fixes
+  gets a distinct fresh file; `scripts/sdd-workspace` prints the directory)
+- `[REVIEW_REPORT_FILE]` — REQUIRED: workspace path
+  `review-<base7>..<head7>-report.md`
 
-**Reviewer returns:** Spec Compliance verdict (✅/❌/⚠️), Strengths, Issues
-(Critical/Important/Minor), Task quality verdict
-
-A fix dispatch can address spec gaps and quality findings together;
-re-review after fixes covers both verdicts.
+**Gate:** the controller runs `scripts/verdict-check VERDICT_FILE`. Exit 0 →
+task passes, flip the ledger. Exit 1 → dispatch a fix subagent with the
+findings and the prose report path; a fix dispatch addresses spec and
+standards findings together, and re-review after fixes covers both axes with
+a fresh verdict file. Exit 2 (malformed) → re-dispatch the reviewer; a
+malformed verdict is never a pass.

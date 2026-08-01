@@ -19,7 +19,12 @@
             "type": "command",
             "command": "~/.claude/skills/guardrails/scripts/guard-bash.sh",
             "timeout": 20
-          },
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
           {
             "type": "command",
             "command": "~/.claude/skills/guardrails/scripts/budget-halt.sh",

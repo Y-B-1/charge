@@ -102,5 +102,11 @@ For substantial builds, separating *what* from *how* keeps each stable:
   per-pass check and the slower final check, the memory files, the evidence
   required, the approval boundaries, and the caps.
 
-`LOOP-STATE.md` (the spine) then records progress *across* passes. If a dedicated
-goal skill produced `SPEC.md`/`GOAL.md`, this skill just consumes them and runs.
+Then translate the `done_when` list into the loop's contract: each line becomes
+a `features[]` entry in `loop-state.json`
+([../assets/loop-state.template.json](../assets/loop-state.template.json)) with
+its own `verify` command and `passes: false` — the harness gates DONE on zero
+`passes:false` plus the verify command, so the goal doubles as the completion
+check. `loop-state.json` is the authority across passes; `loop-log.md` carries
+the narrative. If a dedicated goal skill produced `SPEC.md`/`GOAL.md`, this
+skill just consumes them and runs.
