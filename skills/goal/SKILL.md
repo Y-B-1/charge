@@ -20,7 +20,7 @@ disable-model-invocation: true
 # Goal — define a checkable destination before you build
 
 This skill produces the **destination**: an execution contract crisp enough
-that something else — you, the `loop` skill, or another engineer — can drive to
+that something else — you, the `ralph-loop` skill, or another engineer — can drive to
 it and *prove* it arrived. It does not write the feature, and it does not
 decide what the feature should be.
 

@@ -1,5 +1,5 @@
 ---
-name: loop
+name: ralph-loop
 description: >-
   Run an autonomous, self-correcting loop that drives a project, refactor,
   migration, or fix to a machine-verified finish and stops at an honest terminal
