@@ -23,20 +23,46 @@ Package manager: `<NAME>` — <REASON IT IS NOT THE DEFAULT>.
 ## Verification
 
 <!-- WHICH TIER RUNS WHERE. The commands are discoverable; their placement is
-     not. Delete only if every check in this repo finishes in seconds. -->
+     not. The policy below is the STANDING DEFAULT — change the commands,
+     ports and durations, not the policy. These lines are not deletable.
+     Deviating requires the user's explicit words, recorded under
+     "Deviation from the standing default" at the end of this section. -->
+
+The escape boundary is the merge where code reaches `<PROTECTED-BRANCH>`.
+Everything below it is scoped; the full suite runs there and nowhere else.
 
 | When | What runs | Where |
 |---|---|---|
 | Every edit | `<FAST-CHECK COMMANDS: types, lint, unit>` | whole repo |
-| Every <WORK-UNIT: task/wave/subagent> | scoped `<INTEGRATION/E2E COMMAND>` — only specs that *traverse* the changed surface, not just ones that name it | `<SEPARATE PORT/ENV>` |
-| Every <MERGE-UNIT: PR/branch/batch> | ONE authoritative full run: `<FULL-SUITE COMMAND>` (~<N> min) | `<PRIMARY PORT/ENV>`, on the FINAL commit |
+| Every work unit inside a branch (`<WORK-UNIT: task/wave/subagent>`) | scoped `<INTEGRATION/E2E COMMAND>` — exactly the features that changed, never the full suite | `<ISOLATED PORT/ENV>` |
+| Every PR that does NOT reach `<PROTECTED-BRANCH>` | scoped only, same rule as above | `<ISOLATED PORT/ENV>` |
+| The merge that reaches `<PROTECTED-BRANCH>` (the escape boundary) | ONE authoritative full run: `<FULL-SUITE COMMAND>` (~<N> min) | `<PRIMARY PORT/ENV>`, on the FINAL commit |
 
-- Any code change after a green run voids it — re-run before merging.
-- <!-- delete unless runs can collide --> Builds are serialised against any live
-  preview a check reads from: a build rewriting `<BUILD-OUTPUT-DIR>` under a
-  running preview produces mass false failures.
-- <!-- delete if the full run is fast --> During the full run's idle minutes:
-  `<PARALLEL WORK, e.g. draft the PR body from the evidence>`.
+Standing default — change the commands, not the policy:
+
+- Scoped e2e per work unit and per PR inside a branch. It covers exactly the
+  features that changed and runs on an isolated port. Never a full suite.
+- The full suite runs ONCE, at the merge that reaches `<PROTECTED-BRANCH>`, on
+  the final commit. Where PRs merge straight to `<PROTECTED-BRANCH>`, the PR is
+  that boundary; where PRs stack onto an integration branch, the full run waits
+  for that later merge and the stacked PRs stay scoped.
+- Select the scoped set by grepping for what *traverses* the changed surface,
+  not for what asserts it. A set chosen by assertions under-covers and the
+  saving is fake.
+- Redundant full runs belong in CI on `<PROTECTED-BRANCH>`, never in agent
+  time. Hosted CI runs cost zero agent tokens and zero agent minutes.
+- Any commit after a green run voids it as evidence — re-run before merging.
+
+<!-- delete unless runs can collide --> Builds are serialised against any live
+preview a check reads from: a build rewriting `<BUILD-OUTPUT-DIR>` under a
+running preview produces mass false failures.
+
+<!-- delete if the full run is fast --> During the full run's idle minutes:
+`<PARALLEL WORK, e.g. draft the PR body from the evidence>`.
+
+<!-- delete unless the user explicitly overrode the standing default -->
+Deviation from the standing default: <WHAT CHANGED> — <THE USER'S REASON,
+QUOTED>.
 
 ## Read before you touch
 

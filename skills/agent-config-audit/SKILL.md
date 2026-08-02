@@ -286,38 +286,53 @@ tier is frequency × duration, and frequency is the only lever that does not
 cost coverage. Time the slowest tier before judging: `<full-suite command>`
 once, or take the number from CI history.
 
+The standard to audit against is the **escape boundary** rule: scoped e2e per
+work unit and per PR inside a branch, the full suite ONCE at the merge that
+reaches the protected branch, on the final commit. Locate that boundary before
+judging — where PRs merge straight to the protected branch it is the PR; where
+PRs stack onto an integration branch it is that later merge.
+
 Read the brief (and `.claude/rules/*`, `AGENT-MEMORY.md`, any wave/subagent
-prompt template) and ask three things:
+prompt template) and ask four things:
 
 - **Is placement stated at all?** Three lines are the minimum: fast
-  deterministic checks per edit, scoped integration/e2e per work unit, ONE
-  full run per merge unit on the final commit.
-- **Is the expensive tier bounded to the merge boundary**, or does every task
-  drag the whole suite behind it?
+  deterministic checks per edit, scoped e2e per work unit and per non-escaping
+  PR, ONE full run at the escape boundary on the final commit.
+- **Is the full suite bounded to the escape boundary**, or does some lower
+  boundary — task, wave, subagent, stacked PR — drag it along?
+- **Could CI absorb the full runs the agent is paying for?**
 - **Is there an isolation story** where two runs can collide — shared port,
   shared build output, shared DB, shared fixture dir?
 
 Findings:
 
-- **MAJOR** — the brief (or the subagent prompt) has each task run the full
-  suite. Name the multiplier in the finding: at N tasks per merge unit this
-  buys N runs where one is evidence; a measured session held 9 full runs at
-  ~14 min (124 min, ~20% of machine-active time) precisely by forbidding
-  subagents the full run, against a prior practice of 3–4 full runs per task.
+- **MAJOR** — a full suite runs at **any boundary below the escape boundary**
+  (per task, per wave, per subagent, per stacked PR). Name the multiplier
+  explicitly: at N such units per escape boundary this buys N runs where one is
+  evidence, so an N-wave branch pays N × the suite duration for a single
+  merge's worth of proof. A measured session held 9 full runs at ~14 min
+  (124 min, ~20% of machine-active time) precisely by forbidding subagents the
+  full run, against a prior practice of 3–4 full runs per task.
+- **MAJOR** — the repo runs full suites in **agent time that CI could absorb
+  for free**. State it in the finding with the phrase **"CI runs cost zero
+  agent tokens"**: hosted CI on the protected branch costs zero agent tokens
+  and zero agent minutes, so redundant coverage belongs there and the agent
+  keeps exactly one run at the escape boundary. Fix: move the redundant runs
+  into the protected-branch CI workflow, not out of existence.
 - **MAJOR** — no stated placement in a repo whose slowest tier runs in minutes.
   Absent a rule, the default is "run everything, often."
+- **MINOR** — the scoped set is selected by what **asserts** the changed
+  surface rather than what **traverses** it. The set silently under-covers, so
+  the saving is fake — the branch reaches the escape boundary with less
+  evidence than its run count implies. Fix: select by grepping for the code
+  paths the specs exercise, not for the names they mention.
 - **MINOR** — no isolation story where two runs can collide. A build rewriting
   the output dir under a live preview a scoped run reads produces mass false
   failures (one measured collision: 46 false failures, ~6 min plus root-cause).
   Fix: a second port/env, and serialise builds against any live preview.
 - **MINOR** — placement stated but no evidence-expiry line. The brief should
-  say: any code change after a green run voids it, re-run before merging. This
-  is the reason the full run belongs on the final commit.
-
-Scope selection is part of the check: if the brief tells subagents to pick
-scoped specs, it must say to grep for what **traverses** the changed surface,
-not just what asserts it — otherwise the scoped set silently under-covers and
-the saving is fake.
+  say: any commit after a green run voids it, re-run before merging. This is
+  the reason the full run belongs on the final commit.
 
 Fix format: name the file and the missing/mis-bounded line, and give the
 replacement placement table. Route to `agent-config-init`'s `CLAUDE.template.md`
@@ -329,7 +344,7 @@ coverage.
 | | Meaning |
 |---|---|
 | **CRITICAL** | The agent is misled or unguarded: false enforcement claim, unparsable settings, a hook the docs rely on that cannot block, secrets in memory, run-time-fetched instructions. Any CRITICAL ⇒ verdict **BLOCK**. |
-| **MAJOR** | Doctrine broken with a live cost: brief over cap, duplication against global, violated `MUST` still in prose, missing hook timeout, `@latest` in a gate, contradicting files, oversized mandated memory, the full suite run per task instead of per merge unit. |
+| **MAJOR** | Doctrine broken with a live cost: brief over cap, duplication against global, violated `MUST` still in prose, missing hook timeout, `@latest` in a gate, contradicting files, oversized mandated memory, a full suite run at any boundary below the escape boundary, full runs in agent time that CI could absorb free. |
 | **MINOR** | Sediment, unstamped research, missing precedence statement, chatty hooks, dead illustrative pointer. |
 
 ---

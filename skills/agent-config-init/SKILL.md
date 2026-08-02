@@ -70,15 +70,20 @@ install — ask nothing else:
 | 4 | Does work span sessions? | T4 memory |
 | 5 | Will anything run unattended? | T6 loop wiring; hardens T2 |
 | 6 | Which invariants are hard to reverse? | T5 constitution and ADRs |
-| 7 | What is the verification shape? | The T0 `## Verification` section; T1 allow list; T2 build/preview serialisation |
+| 7 | What is the verification shape, and where does code reach the protected branch? | The T0 `## Verification` section; T1 allow list; T2 build/preview serialisation |
 
 **Question 7 in full** — ask it as one question, but you need four facts, and
 step 1 has already given you most of them:
 
 - **The check tiers and their exact commands** — fast deterministic (types,
   lint, unit), scoped integration/e2e, full suite. Literal strings.
-- **The merge unit** — PR? branch? batch of waves? This is the boundary the
-  expensive tier is pinned to, and the repo cannot tell you.
+- **Where code reaches the protected branch — the escape boundary.** Not "what
+  is the merge unit": ask which merge actually lands code on the protected
+  branch. Two topologies, one rule. If PRs merge straight to the protected
+  branch, that PR *is* the escape boundary and the full run happens there. If
+  PRs stack onto an integration/feature branch that merges later, the escape
+  boundary is that later merge, and every stacked PR stays scoped. Get the
+  protected branch's name too — it goes in the file.
 - **How long the slowest tier takes** — a number, in minutes. If nobody knows,
   say so in the file; an unmeasured slow tier gets run at the wrong frequency.
 - **Can two runs collide?** — shared port, shared build output (`dist/`),
@@ -149,26 +154,43 @@ project file **only** when no global file exists, or when the project needs a
 Apply the **no-op test** to every surviving sentence: if deleting it would not
 change agent behavior, delete it.
 
-**Write the `## Verification` section from the answers to question 7 — for a
-repo with a slow suite it is the highest-leverage thing this file can carry.**
-It states *which tier runs where*, not which checks exist. Checks are
-discoverable from `package.json`; their placement is not, and placement is
-where the money goes: in one measured session 9 authoritative full e2e runs
-cost 124 min — 19.7% of machine-active time at ~14 min each. It stayed at 9
-only because the rule was written down. Four lines carry it:
+**Write the `## Verification` section — the policy is a standing default, not a
+question you are asking.** Question 7 supplies the repo's commands, protected
+branch name, ports and durations; the policy itself is already written in the
+template and ships as-is. For a repo with a slow suite this is the
+highest-leverage thing the file can carry: checks are discoverable from
+`package.json`, their placement is not, and placement is where the money goes —
+in one measured session 9 authoritative full e2e runs cost 124 min, 19.7% of
+machine-active time at ~14 min each, and it stayed at 9 only because the rule
+was written down.
+
+The standing default, stated as a rule in the generated file:
 
 - **Per edit** — fast deterministic checks, whole repo. Cheap enough to be
   ambient; friction here is free.
-- **Per work unit** (task, wave, subagent) — scoped integration/e2e only, on a
-  **separate port or environment**, and select the set by grepping for what
-  *traverses* the changed surface, not just what asserts it. Tests that never
-  name the surface are often the ones that exercise it.
-- **Per merge unit** — **ONE** authoritative full run, on the **final** commit.
-  Name the merge unit explicitly (PR / branch / batch). This one line is what
-  replaces the default practice of 3–4 full runs per task.
-- **Evidence expiry** — any code change after a green run voids it; re-run
-  before merging. A green run is evidence about one tree only, which is exactly
-  why the full run belongs on the final commit and not before it.
+- **Per work unit and per PR inside a branch** — scoped e2e only, covering
+  exactly the features that changed, on an **isolated port or environment**.
+  Never a full suite. Select the set by grepping for what *traverses* the
+  changed surface, not for what asserts it; tests that never name the surface
+  are often the ones that exercise it.
+- **At the escape boundary — the merge that reaches the protected branch** —
+  **ONE** authoritative full run, on the **final** commit. Name the boundary
+  this way, not "per PR" or "per branch": where PRs merge straight to the
+  protected branch it collapses to the PR, and where PRs stack onto an
+  integration branch it correctly waits for that later merge.
+- **CI absorbs the redundancy** — hosted CI runs cost zero agent tokens and
+  zero agent minutes. Extra full runs go to CI on the protected branch, never
+  into agent time. This is why the cost-vs-coverage tradeoff does not bite: the
+  agent pays for one run, CI pays for the rest.
+- **Evidence expiry** — any commit after a green run voids it; re-run before
+  merging. A green run is evidence about one tree only, which is exactly why
+  the full run belongs on the final commit and not before it.
+
+**Deviate only if the user's grill answers explicitly justify it.** A silence,
+a shrug, or your own judgment about this repo is not justification — write the
+default. When the user does override it, write the deviation and their quoted
+reason into the generated file's `## Verification` section (the template
+carries the line), and repeat both in your step 6 report.
 
 Two riders, written only when the repo earns them:
 
