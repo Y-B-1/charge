@@ -20,6 +20,24 @@
 
 Package manager: `<NAME>` — <REASON IT IS NOT THE DEFAULT>.
 
+## Verification
+
+<!-- WHICH TIER RUNS WHERE. The commands are discoverable; their placement is
+     not. Delete only if every check in this repo finishes in seconds. -->
+
+| When | What runs | Where |
+|---|---|---|
+| Every edit | `<FAST-CHECK COMMANDS: types, lint, unit>` | whole repo |
+| Every <WORK-UNIT: task/wave/subagent> | scoped `<INTEGRATION/E2E COMMAND>` — only specs that *traverse* the changed surface, not just ones that name it | `<SEPARATE PORT/ENV>` |
+| Every <MERGE-UNIT: PR/branch/batch> | ONE authoritative full run: `<FULL-SUITE COMMAND>` (~<N> min) | `<PRIMARY PORT/ENV>`, on the FINAL commit |
+
+- Any code change after a green run voids it — re-run before merging.
+- <!-- delete unless runs can collide --> Builds are serialised against any live
+  preview a check reads from: a build rewriting `<BUILD-OUTPUT-DIR>` under a
+  running preview produces mass false failures.
+- <!-- delete if the full run is fast --> During the full run's idle minutes:
+  `<PARALLEL WORK, e.g. draft the PR body from the evidence>`.
+
 ## Read before you touch
 
 <!-- Pointers beat explanations. A pointer stays current; prose rots. -->

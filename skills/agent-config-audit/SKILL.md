@@ -8,11 +8,12 @@ description: >-
   .claude/settings.json, a hook script, or a memory file. Triggers: "audit
   this repo's setup," "is our CLAUDE.md too long," "check our hooks actually
   fire," "why does the agent ignore our rules," "review our agent config,"
-  "we just rewrote CLAUDE.md." Ten checks: instruction budget and the no-op
-  test, duplication against the user's global CLAUDE.md, prose rules that
-  should be hooks, hook validity plus live fire tests, false enforcement
-  claims, memory shape and staleness, precedence coherence, project skill
-  economics, stale pointers. Reports PASS or BLOCK with severity-ranked
+  "we just rewrote CLAUDE.md." Eleven checks: instruction budget, duplication
+  against the global CLAUDE.md, prose rules that should be hooks, hook
+  validity plus fire tests, false enforcement claims, memory shape and
+  staleness, precedence coherence, project skill economics, stale pointers,
+  growth discipline, verification placement (which tier runs where).
+  Reports PASS or BLOCK with severity-ranked
   findings, the exact fix per finding, and an honest list of what already
   passes. Read-only by default: it diagnoses, it does not edit.
 disable-model-invocation: true
@@ -78,7 +79,7 @@ or spot a contradiction between two files — checks 1, 2, 3, 5, 6, 7 need you.
 
 ---
 
-## Step 2 — The ten checks
+## Step 2 — The eleven checks
 
 ### 1. BUDGET — is the brief still affordable
 
@@ -277,12 +278,58 @@ Missing section → **MAJOR**. Missing section *and* already over cap → **CRIT
 the file is growing with nothing to stop it. Fix: install the section from
 `agent-config-init`'s template and wire its budget guard.
 
+### 11. VERIFICATION PLACEMENT — which tier runs where
+
+A brief that lists the check commands but not their *boundaries* leaves the
+most expensive decision in the repo to per-session improvisation. Cost of a
+tier is frequency × duration, and frequency is the only lever that does not
+cost coverage. Time the slowest tier before judging: `<full-suite command>`
+once, or take the number from CI history.
+
+Read the brief (and `.claude/rules/*`, `AGENT-MEMORY.md`, any wave/subagent
+prompt template) and ask three things:
+
+- **Is placement stated at all?** Three lines are the minimum: fast
+  deterministic checks per edit, scoped integration/e2e per work unit, ONE
+  full run per merge unit on the final commit.
+- **Is the expensive tier bounded to the merge boundary**, or does every task
+  drag the whole suite behind it?
+- **Is there an isolation story** where two runs can collide — shared port,
+  shared build output, shared DB, shared fixture dir?
+
+Findings:
+
+- **MAJOR** — the brief (or the subagent prompt) has each task run the full
+  suite. Name the multiplier in the finding: at N tasks per merge unit this
+  buys N runs where one is evidence; a measured session held 9 full runs at
+  ~14 min (124 min, ~20% of machine-active time) precisely by forbidding
+  subagents the full run, against a prior practice of 3–4 full runs per task.
+- **MAJOR** — no stated placement in a repo whose slowest tier runs in minutes.
+  Absent a rule, the default is "run everything, often."
+- **MINOR** — no isolation story where two runs can collide. A build rewriting
+  the output dir under a live preview a scoped run reads produces mass false
+  failures (one measured collision: 46 false failures, ~6 min plus root-cause).
+  Fix: a second port/env, and serialise builds against any live preview.
+- **MINOR** — placement stated but no evidence-expiry line. The brief should
+  say: any code change after a green run voids it, re-run before merging. This
+  is the reason the full run belongs on the final commit.
+
+Scope selection is part of the check: if the brief tells subagents to pick
+scoped specs, it must say to grep for what **traverses** the changed surface,
+not just what asserts it — otherwise the scoped set silently under-covers and
+the saving is fake.
+
+Fix format: name the file and the missing/mis-bounded line, and give the
+replacement placement table. Route to `agent-config-init`'s `CLAUDE.template.md`
+for the shape. Do not propose deleting a tier — cut its frequency, never its
+coverage.
+
 ## Step 3 — Severity
 
 | | Meaning |
 |---|---|
 | **CRITICAL** | The agent is misled or unguarded: false enforcement claim, unparsable settings, a hook the docs rely on that cannot block, secrets in memory, run-time-fetched instructions. Any CRITICAL ⇒ verdict **BLOCK**. |
-| **MAJOR** | Doctrine broken with a live cost: brief over cap, duplication against global, violated `MUST` still in prose, missing hook timeout, `@latest` in a gate, contradicting files, oversized mandated memory. |
+| **MAJOR** | Doctrine broken with a live cost: brief over cap, duplication against global, violated `MUST` still in prose, missing hook timeout, `@latest` in a gate, contradicting files, oversized mandated memory, the full suite run per task instead of per merge unit. |
 | **MINOR** | Sediment, unstamped research, missing precedence statement, chatty hooks, dead illustrative pointer. |
 
 ---
