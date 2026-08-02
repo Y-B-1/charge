@@ -3,19 +3,20 @@ name: agent-config-audit
 description: >-
   Audit an existing repo's agent infrastructure — CLAUDE.md, hooks,
   settings.json, memory files, project-local skills — against
-  instruction-budget and enforcement doctrine, then report the fixes. Run
-  periodically as a drift check, and after any change to CLAUDE.md,
-  .claude/settings.json, a hook script, or a memory file. Triggers: "audit
-  this repo's setup," "is our CLAUDE.md too long," "check our hooks actually
-  fire," "why does the agent ignore our rules," "review our agent config,"
-  "we just rewrote CLAUDE.md." Eleven checks: instruction budget, duplication
-  against the global CLAUDE.md, prose rules that should be hooks, hook
-  validity plus fire tests, false enforcement claims, memory shape and
-  staleness, precedence coherence, project skill economics, stale pointers,
-  growth discipline, verification placement (which tier runs where).
-  Reports PASS or BLOCK with severity-ranked
-  findings, the exact fix per finding, and an honest list of what already
-  passes. Read-only by default: it diagnoses, it does not edit.
+  instruction-budget and enforcement doctrine. Run
+  periodically, and after any change to CLAUDE.md, settings.json, a hook, or a
+  memory file. Triggers: "audit this repo's setup," "is our CLAUDE.md too
+  long," "check our hooks actually fire," "why does the agent ignore our
+  rules." Twelve checks: instruction budget, duplication against the global
+  CLAUDE.md, prose rules that should be hooks, hook validity and fire tests,
+  false enforcement claims, memory shape and staleness, precedence coherence,
+  project skill economics, stale pointers, growth discipline, verification
+  placement, and evidence reach (rules that never travel to the subagents
+  they bind, merge gates resting on memory not a fresh marker, claims from a
+  surface that cannot produce them validly). Reports PASS or BLOCK with
+  severity-ranked findings, the
+  exact fix per finding, and what already passes. Read-only: diagnoses, does
+  not edit.
 disable-model-invocation: true
 ---
 
@@ -79,7 +80,7 @@ or spot a contradiction between two files — checks 1, 2, 3, 5, 6, 7 need you.
 
 ---
 
-## Step 2 — The eleven checks
+## Step 2 — The twelve checks
 
 ### 1. BUDGET — is the brief still affordable
 
@@ -339,12 +340,54 @@ replacement placement table. Route to `agent-config-init`'s `CLAUDE.template.md`
 for the shape. Do not propose deleting a tier — cut its frequency, never its
 coverage.
 
+### 12. EVIDENCE REACH — does the rule reach the actor, does the evidence hold
+
+Check 11 audits whether the right rule is written. This one audits whether it
+arrives, and whether what it produces is admissible.
+
+- **MAJOR — a rule that binds subagents lives only where subagents cannot see
+  it.** For every rule about how work units run (verification placement, port
+  isolation, commit discipline, budget caps), find where it is written and where
+  it binds. If it lives in `CLAUDE.md`, a `.claude/rules/*.md` glob, or a
+  standing brief, and the thing it constrains is a **subagent**, it does not
+  arrive: a subagent's context is fresh by construction, and a path-scoped rule
+  loads only when the subagent *reads* a matching file — writing a brief is not
+  reading one. Name this the **invisibility failure**: correct content, correct
+  glob, invisible exactly where it binds. One measured case put the e2e policy
+  in `.claude/rules/e2e.md` scoped to `e2e/**`; the agent that needed it was
+  writing a subagent brief and never opened an e2e file, and the subagents it
+  briefed ran ~11 redundant full suites (~90 min). Fix: restate the rule inline
+  in the subagent brief / wave template / `Task` prompt, or enforce it with a
+  hook at the point the subagent acts. Progressive disclosure works within a
+  context, never across a fan-out — do not fix this by re-wording the glob.
+- **MAJOR (when a slow suite exists) — the merge gate rests on memory, not on a
+  marker.** "Re-run before merging" as prose has to be remembered on every
+  merge. Check whether a `PreToolUse` hook blocks `gh pr merge` (and a merge
+  into the protected branch) unless a marker holds the suite's **exit code AND
+  the sha it ran against**, equal to current `HEAD`. With the sha in the marker,
+  a commit after the green run re-blocks the gate automatically; without it,
+  evidence expiry is a habit. Fix: install
+  `agent-config-init`'s `assets/hooks/guard-merge-evidence.sh`, wire it with an
+  explicit `timeout`, fire-test it (check 4e), and have the authoritative run
+  write the marker. Downgrade to MINOR where the suite is seconds long.
+- **MINOR — a claim is sourced from a surface that cannot produce it validly.**
+  Frame-timed and animation-timed measurements (frame rates, dropped frames,
+  transition durations, jank) taken in an agent-driven browser pane are
+  **invalid evidence, not merely imprecise**: pages held hidden between tool
+  calls never fire `requestAnimationFrame` and clamp timers to ~1 s, so the
+  reading is confident and false. Flag any brief, skill or memory file that
+  mandates such a measurement without naming a valid surface. Fix: name the
+  surface in the same line — a real browser driving a preview port (a throwaway
+  Playwright harness) for motion claims. Generalise the finding when you write
+  it: a measuring surface can silently produce confident false readings, so the
+  brief states which surface makes which class of claim admissible.
+
 ## Step 3 — Severity
 
 | | Meaning |
 |---|---|
 | **CRITICAL** | The agent is misled or unguarded: false enforcement claim, unparsable settings, a hook the docs rely on that cannot block, secrets in memory, run-time-fetched instructions. Any CRITICAL ⇒ verdict **BLOCK**. |
-| **MAJOR** | Doctrine broken with a live cost: brief over cap, duplication against global, violated `MUST` still in prose, missing hook timeout, `@latest` in a gate, contradicting files, oversized mandated memory, a full suite run at any boundary below the escape boundary, full runs in agent time that CI could absorb free. |
+| **MAJOR** | Doctrine broken with a live cost: brief over cap, duplication against global, violated `MUST` still in prose, missing hook timeout, `@latest` in a gate, contradicting files, oversized mandated memory, a full suite run at any boundary below the escape boundary, full runs in agent time that CI could absorb free, a rule that binds subagents written only where they cannot see it, a merge gate resting on memory instead of a fresh-evidence marker. |
 | **MINOR** | Sediment, unstamped research, missing precedence statement, chatty hooks, dead illustrative pointer. |
 
 ---

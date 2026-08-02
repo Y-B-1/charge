@@ -141,6 +141,27 @@ constraints:
   the budget with no-ops.
 - **Zero duplication of the user's global instruction file.** Run the dedup
   check explicitly and say so in your report.
+- **The standing delegation-boundary rule is required content.** It ships in
+  the template's `## Rules` section as the first line and is never deleted, not
+  even when trimming to the cap:
+
+  > Any rule that constrains a subagent must be restated inline in that
+  > subagent's brief, or enforced by a hook where the subagent acts —
+  > path-scoped rules and this file do not travel across a delegation boundary.
+
+  This one is not speculative and it is not free advice. A subagent's context
+  is fresh by construction: it never inherits this file, and a `.claude/rules/`
+  file loads only when the subagent *reads* a matching path. In one measured
+  session the e2e placement policy lived in `.claude/rules/e2e.md`, scoped to
+  `e2e/**` — correct content, correct glob, and still invisible, because the
+  agent who needed it was **writing a subagent brief** and never opened an e2e
+  file. The subagents it briefed ran the full suite each: ~11 redundant full
+  runs, ~90 min of machine-active time, for one merge's worth of evidence.
+  Progressive disclosure has a hard limit — it works *within* a context and
+  never *across* a fan-out. So when you write the `## Verification` section,
+  also say where its policy gets restated: any wave template, subagent brief,
+  or `Task` prompt this repo uses must carry the placement rule inline, or a
+  hook must enforce it at the point the subagent acts.
 
 **The dedup check (state it explicitly, line by line):** for every candidate
 line, if the user's global file already says it — in any wording — delete the
@@ -262,6 +283,23 @@ write and exits 2 past the cap, so the agent trims in the same turn instead of
 leaving the bloat for a later audit to find. Caps are overridable by
 environment variable; the prose rule in T0 and this hook are the same rule at
 two enforcement levels.
+
+**Recommended in every repo with a slow suite and a protected branch:** install
+[assets/hooks/guard-merge-evidence.sh](assets/hooks/guard-merge-evidence.sh) as
+a `PreToolUse` hook on `Bash`. It blocks `gh pr merge` (and a merge into the
+protected branch) unless a marker file — default `.claude/.suite-pass` — holds a
+passing exit code **and** a sha equal to current `HEAD`. The orchestrator writes
+the marker from its own authoritative run:
+
+```bash
+<FULL-SUITE COMMAND>; printf '%s %s\n' "$?" "$(git rev-parse HEAD)" > .claude/.suite-pass
+```
+
+Evidence expiry stops being something to remember. Any commit after the green
+run moves `HEAD`, the marker no longer matches, and the gate re-blocks by
+construction. It fails **closed**: no marker means no merge, which is the point.
+Add `.claude/.suite-pass` to `.gitignore` — it is a fact about one machine's
+tree, not about the repo.
 
 ### T3 — `.claude/rules/*.md` (when subsystems have distinct rules)
 

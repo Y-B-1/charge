@@ -1,7 +1,7 @@
 {
   "name": "charge",
   "description": "The executable arm of the Orchestra brain: Matt Pocock's engineering chain (vendored) + a doctrine-aligned autonomy suite (loop/goal/owner) with guardrails, one lean router, honest terminal states",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "author": {
     "name": "Yusri",
     "email": "yosri86@gmail.com"
