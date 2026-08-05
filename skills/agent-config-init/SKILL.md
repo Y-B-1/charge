@@ -12,7 +12,7 @@ description: >-
   PreToolUse hooks when a rule MUST hold; path-scoped `.claude/rules/` when
   subsystems differ; AGENT-MEMORY.md when work spans sessions; CONSTITUTION.md
   plus ADRs when invariants are hard to reverse; loop-state.json plus PROMPT.md
-  when unattended runs are planned. Not for authoring skills (writing-great-skills),
+  when unattended runs are planned. Not for authoring skills (writing-for-agents),
   not for planning a feature (grilling), not for running a loop (ralph-loop).
 disable-model-invocation: true
 ---

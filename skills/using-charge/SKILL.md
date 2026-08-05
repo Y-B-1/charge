@@ -50,7 +50,7 @@ run, and wait.
 | Work too big for one session / "where do we even start" | **wayfinder** |
 | "Improve the architecture / find deepening opportunities" | **improve-codebase-architecture** |
 | Architecture vocabulary and design principles for a codebase | **codebase-design** |
-| Write or edit a skill | **writing-great-skills** |
+| Write or edit a skill | **writing-for-agents** |
 | Pressure-test a skill before shipping | **testing-skills** |
 | Catalog bloat, duplicate skill names, description budget | **skill-audit** |
 | "Build an MCP server / wrap an API for agents" | **mcp-builder** (CLI-first gate inside) |

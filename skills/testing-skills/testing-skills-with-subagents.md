@@ -180,7 +180,7 @@ For each new rationalization, add:
 ### 1. Positive Rule First, Guardrail Second
 
 Steering by prohibition alone backfires — naming the banned move makes it
-*more* available, not less (writing-great-skills' Negation failure mode).
+*more* available, not less (writing-for-agents' Negation failure mode).
 State the target behavior positively so the banned one is never the headline;
 keep a "don't" only as a hard guardrail you can't phrase positively, and
 always pair it with the do-instead.
@@ -228,7 +228,7 @@ instead ("close the file and write the test from the spec").
 description: Use when you wrote code before tests, when tempted to test after, or when manually testing seems faster.
 ```
 
-Add symptoms of ABOUT to violate — but obey writing-great-skills' description
+Add symptoms of ABOUT to violate — but obey writing-for-agents' description
 rules: one trigger per branch, no synonyms renaming the same branch, no
 restating identity that's already in the body.
 

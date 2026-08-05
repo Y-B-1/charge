@@ -38,18 +38,32 @@ MIT License applies to this repository; see LICENSE.
 
 **mattpocock/skills** (MIT, Copyright (c) 2026 Matt Pocock) —
 https://github.com/mattpocock/skills — vendored **verbatim** (content and
-frontmatter untouched) from plugin version **1.2.0**, on **2026-08-01**.
+frontmatter untouched) from plugin version **1.2.2**, on **2026-08-05**.
 Each skill's entire directory is carried into `skills/<name>/`. See SYNC.md
 for the refresh procedure.
 
-Vendored skills:
+As of this refresh the vendored set is **complete** — every skill upstream
+publishes is carried, including the `in-progress/` and course-authoring
+skills the earlier curated subset skipped. Only Matt's personal skills
+(`personal/`), which upstream itself removed in 1.2.1, are absent.
 
-- engineering: code-review, codebase-design, diagnosing-bugs,
+Vendored skills (35):
+
+- engineering: ask-matt, code-review, codebase-design, diagnosing-bugs,
   domain-modeling, grill-with-docs, implement,
   improve-codebase-architecture, prototype, research,
-  resolving-merge-conflicts, tdd, to-spec, to-tickets, triage, wayfinder, setup-matt-pocock-skills
-- productivity: grill-me, grilling, handoff, writing-great-skills
-- misc: git-guardrails-claude-code, setup-pre-commit
+  resolving-merge-conflicts, setup-matt-pocock-skills, tdd, to-spec,
+  to-tickets, triage, wayfinder, wizard
+- productivity: grill-me, grilling, handoff, teach, to-questionnaire,
+  wait-what, writing-for-agents
+- misc: git-guardrails-claude-code, migrate-to-shoehorn,
+  scaffold-exercises, setup-pre-commit
+- in-progress: claude-handoff, loop-me, setup-ts-deep-modules,
+  writing-beats, writing-fragments, writing-shape
+
+Upstream 1.2.1 renamed `writing-great-skills` to `writing-for-agents` and
+restructured it (a breaking change: its `GLOSSARY.md` is gone). Charge
+follows the rename; charge-origin pointers were rewired to the new name.
 
 As of v2.0 these supersede and replace the former superpowers-forked
 discipline skills (brainstorming, writing-plans, executing-plans,

@@ -5,7 +5,7 @@ description: >-
   failing WITHOUT the skill, verify compliance WITH it, close rationalization
   loopholes. Use when a new or edited skill enforces discipline that an agent
   under pressure would want to dodge, or as the ship gate before any skill
-  lands in the catalog. Authoring doctrine lives in writing-great-skills, not
+  lands in the catalog. Authoring doctrine lives in writing-for-agents, not
   here.
 disable-model-invocation: true
 ---
@@ -15,7 +15,7 @@ disable-model-invocation: true
 Scope: this skill covers one thing — pressure-testing skills so they hold
 when an agent wants to break them. How to WRITE a skill (invocation choice,
 description craft, information hierarchy, splitting, pruning, failure modes)
-is [writing-great-skills](../writing-great-skills/SKILL.md) territory; read it
+is [writing-for-agents](../writing-for-agents/SKILL.md) territory; read it
 first, and nothing here overrides it.
 
 ## The cycle

@@ -143,7 +143,7 @@ Fix: name the target layer and the mechanism. Destructive commands and budget
 ceilings → the `guardrails` skill's hooks (charge) or
 `git-guardrails-claude-code` (repo-local git blocking). Commit-time
 lint/typecheck/test enforcement → `setup-pre-commit`. Multi-step process →
-`writing-great-skills`. Do not restate those skills here — route.
+`writing-for-agents`. Do not restate those skills here — route.
 
 ### 4. HOOK VALIDITY — a hook that cannot block is decoration
 
@@ -431,7 +431,7 @@ Rules for the report:
 ## Routing
 
 `guardrails` / `git-guardrails-claude-code` (install or repair blocking hooks)
-· `setup-pre-commit` (commit-time gates) · `writing-great-skills` (rewrite a
+· `setup-pre-commit` (commit-time gates) · `writing-for-agents` (rewrite a
 project skill) · `skill-audit` (catalog-wide description cost, duplicate names)
 · `domain-modeling` (glossary and ADR drift) · `to-tickets` (findings → work)
 · `handoff` (hand the report to another session).
