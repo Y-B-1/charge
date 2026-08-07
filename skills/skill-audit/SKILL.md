@@ -30,7 +30,10 @@ portably for Claude Code.)
    tool, action, object — they are what routing matches on); cut narrative,
    qualifiers, repeated phrasing, and synonyms that rename one branch.
    Relaxed grammar is fine; missing triggers are not. Re-run to confirm the
-   saving.
+   saving. The reference shape is three sentences — when to READ it, when to
+   USE it, what it DOES — and every sentence says *when to reach for it*,
+   never what it is; a description that opens by describing the skill has its
+   trigger buried where routing can't see it (PostHog, 226-skill catalog).
 3. **Resolve duplicate names** with the rubric below.
 4. **Prune** with the criteria below.
 5. **Update the router:** any rename or removal must be reflected in
@@ -67,6 +70,11 @@ A skill is a prune candidate when ANY of these hold:
   unprompted — fails the no-op test at catalog scale.
 - Its description cannot be written with a distinct leading word — it will
   never win routing against its neighbors.
+- It never cleared the admission bar: the work is not recurring (three times
+  so far, three more expected), agents already do it well by default, and it
+  carries no context the model lacks. Catalog size is a quality budget, not
+  only a token one — wrong-skill routing rises with count (PostHog;
+  Databricks).
 
 Propose each removal to the human with the criterion it met; never silently
 delete.
